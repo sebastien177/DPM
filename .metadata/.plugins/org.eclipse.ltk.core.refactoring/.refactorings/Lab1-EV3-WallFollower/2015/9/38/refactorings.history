@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename package &apos;src.wallFollower&apos; to &apos;wallFollower&apos;&#x0A;- Original project: &apos;Lab1-EV3-WallFollower&apos;&#x0A;- Original element: &apos;Lab1-EV3-WallFollower/src/src.wallFollower&apos;&#x0A;- Renamed element: &apos;Lab1-EV3-WallFollower/src/wallFollower&apos;&#x0A;- Update references to refactored element&#x0A;- Update textual occurrences in comments and strings" description="Rename package &apos;src.wallFollower&apos;" flags="589830" hierarchical="false" id="org.eclipse.jdt.ui.rename.package" input="/src&lt;src.wallFollower" name="wallFollower" qualified="false" references="true" stamp="1442597292550" textual="false" version="1.0"/>
+</session>

@@ -44,6 +44,7 @@ public class PController implements UltrasonicController {
 			this.distance = distance;
 		}
 		
+		
 		if(Math.abs(distError)<= this.bandwidth){
 			this.leftMotor.setSpeed(this.motorStraight);
 			this.rightMotor.setSpeed(this.motorStraight);
