@@ -25,7 +25,6 @@ public class PController implements UltrasonicController {
 	
 	//@Override
 	public void processUSData(int distance) {
-		double distError =  this.distance - this.bandCenter;
 		
 		// rudimentary filter - toss out invalid samples corresponding to null signal.
 		// (n.b. this was not included in the Bang-bang controller, but easily could have).
