@@ -64,13 +64,11 @@ public class PController implements UltrasonicController {
 			turn(this.leftMotor, this.rightMotor, distError);
 		}
 		
-		else if (distError < 0){
-			
-			turn(this.rightMotor, this.leftMotor, distError);
-			
-		}
 		
-
+		
+		
+		
+		// TODO: process a movement based on the us distance passed in (P style)
 	}
 	
 	
@@ -94,9 +92,6 @@ public class PController implements UltrasonicController {
 		else{
 			motorToSpeed.setSpeed(newLowMotor);			
 		}
-		
-		motorToSlow.forward();
-		motorToSpeed.forward();
 		
 		
 	}
