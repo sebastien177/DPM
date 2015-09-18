@@ -49,8 +49,6 @@ public class PController implements UltrasonicController {
 			this.rightMotor.setSpeed(this.motorStraight);
 			this.leftMotor.forward();
 			this.rightMotor.forward();
-			
-			filterControl = 0;
 			//error is recalculated for future reference
 			distError = this.distance - this.bandCenter;
 			

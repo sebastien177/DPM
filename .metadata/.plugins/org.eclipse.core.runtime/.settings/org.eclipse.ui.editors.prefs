@@ -1,2 +1,4 @@
+AbstractTextEditor.Color.Background=0,0,0
 eclipse.preferences.version=1
+lineNumberColor=250,255,251
 overviewRuler_migration=migrated_3.1

@@ -36,31 +36,13 @@ public class PController implements UltrasonicController {
 		} else if (distance == 255){
 			// true 255, therefore set distance to 255
 			this.distance = distance;
-		}
-				
-		else {
+		} else {
 			// distance went below 255, therefore reset everything.
 			filterControl = 0;
 			this.distance = distance;
 		}
 		
-		if(Math.abs(distError)<= this.bandwidth){
-			this.leftMotor.setSpeed(this.motorStraight);
-			this.rightMotor.setSpeed(this.motorStraight);
-			this.leftMotor.forward();
-			this.rightMotor.forward();
-			
-			filterControl = 0;
-			//error is recalculated for future reference
-			distError = this.distance - this.bandCenter;
-			
-		}
-		
-		
-		
-		
-		
-		// TODO: process a movement based on the us distance passed in (P style)
+		// TODO: process a movement based on the us distance passed in (P style)	
 	}
 
 	
