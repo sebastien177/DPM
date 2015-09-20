@@ -23,7 +23,6 @@ public class BangBangController implements UltrasonicController{
 		rightMotor.setSpeed(motorHigh);
 		leftMotor.forward();
 		rightMotor.forward();
-		counter = 0;
 	}
 	
 //	@Override
@@ -45,10 +44,9 @@ public class BangBangController implements UltrasonicController{
 		
 		//If the robot is too far from the wall
 		else if (distError > 0 && distError < 200){
-			counter = 0;
-			//If too far, robot will have to move to the right, left wheel moving faster
-			this.leftMotor.setSpeed(this.motorHigh);
-			this.rightMotor.setSpeed(this.motorLow);
+			//If too far, robot will have to move to the left, right wheel moving faster
+			this.leftMotor.setSpeed(this.motorLow);
+			this.rightMotor.setSpeed(this.motorHigh);
 			this.leftMotor.forward();
 			this.rightMotor.forward();
 			//error is recalculated for future reference
@@ -58,19 +56,23 @@ public class BangBangController implements UltrasonicController{
 		
 		//If the robot is too close to the wall
 		else if (distError < 0){
-			counter = 0;
-			//If too far, robot will have to move left away from the wall, right wheel moving faster
-			this.leftMotor.setSpeed(this.motorLow);
-			this.rightMotor.setSpeed(this.motorHigh);
+			//If too close to wall, robot goes backward
+			if (distError <= -20){
+				this.leftMotor.setSpeed(this.motorMedium);
+				this.rightMotor.setSpeed(this.motorMedium);
+				this.leftMotor.backward();
+				this.rightMotor.backward();				
+			}
+			//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
+			else{
+			this.leftMotor.setSpeed(this.motorHigh);
+			this.rightMotor.setSpeed(this.motorLow);
 			this.leftMotor.forward();
 			this.rightMotor.forward();
+			}
+			//error is recalculated for future reference
 			distError = this.distance - this.bandCenter;
 		}
-		
-		// TODO: STILL NEED TO EVALUATE SCENARIO WHERE THE ROBOT HAS NOTHING AROUND IT
-		
-		
-
 
 	}
 

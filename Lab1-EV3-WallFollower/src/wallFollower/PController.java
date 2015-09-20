@@ -5,12 +5,13 @@ public class PController implements UltrasonicController {
 	
 	private final int bandCenter, bandwidth;
 	private final int motorStraight = 200, FILTER_OUT = 20;
-	private int maxSpeedLimit = 350;
-	private int minSpeedLimit = 40;
+	private int maxSpeedLimit = 400;
+	private int minSpeedLimit = 100;
 	private int newHighMotor, newLowMotor;
 	private EV3LargeRegulatedMotor leftMotor, rightMotor;
 	private int distance;
 	private int filterControl;
+	private int distError;
 	
 	public PController(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
 					   int bandCenter, int bandwidth) {
@@ -28,7 +29,7 @@ public class PController implements UltrasonicController {
 	
 	//@Override
 	public void processUSData(int distance) {
-		double distError =  this.distance - this.bandCenter;
+		 this.distError =  this.distance - this.bandCenter;
 		
 		// rudimentary filter - toss out invalid samples corresponding to null signal.
 		// (n.b. this was not included in the Bang-bang controller, but easily could have).
@@ -56,17 +57,17 @@ public class PController implements UltrasonicController {
 			
 			filterControl = 0;
 			//error is recalculated for future reference
-			distError = this.distance - this.bandCenter;
+			this.distError = this.distance - this.bandCenter;
 			
 		}
 		
 		else if (distError > 0 && distError < 200){
-			turn(this.leftMotor, this.rightMotor, distError);
+			turn(this.rightMotor, this.leftMotor);
 		}
 		
 		else if (distError < 0){
 			
-			turn(this.rightMotor, this.leftMotor, distError);
+			turn(this.leftMotor, this.rightMotor);
 			
 		}
 		
@@ -74,30 +75,31 @@ public class PController implements UltrasonicController {
 	}
 	
 	
-	public void turn (EV3LargeRegulatedMotor motorToSpeed,EV3LargeRegulatedMotor motorToSlow, double distError ){
+	public void turn (EV3LargeRegulatedMotor motorToSpeed,EV3LargeRegulatedMotor motorToSlow){
 		//Setting new speeds related to error
-		newHighMotor = (int) (this.motorStraight + Math.abs(distError)*6);
-		newLowMotor = (int) (this.motorStraight + Math.abs(distError)*6);
+		newHighMotor = (this.motorStraight + Math.abs(this.distError)*6);
+		newLowMotor = (this.motorStraight - Math.abs(this.distError)*6);
 		
 		//Scenario Max limit is reached
-		if (newHighMotor > maxSpeedLimit){
-			motorToSpeed.setSpeed(maxSpeedLimit);
+		if (newHighMotor > this.maxSpeedLimit){
+			motorToSpeed.setSpeed(this.maxSpeedLimit);
 		}
 		else{
 			motorToSpeed.setSpeed(newHighMotor);			
 		}
 		
 		//Scenario Min limit is reached
-		if (newLowMotor < minSpeedLimit){
-			motorToSpeed.setSpeed(minSpeedLimit);
+		if (newLowMotor < this.minSpeedLimit){
+			motorToSlow.setSpeed(this.minSpeedLimit);
 		}
 		else{
-			motorToSpeed.setSpeed(newLowMotor);			
+			motorToSlow.setSpeed(newLowMotor);			
 		}
 		
-		motorToSlow.forward();
 		motorToSpeed.forward();
-		
+		motorToSlow.forward();
+		//error is recalculated for future reference
+		this.distError = this.distance - this.bandCenter;
 		
 	}
 
