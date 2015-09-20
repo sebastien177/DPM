@@ -57,16 +57,10 @@ public class BangBangController implements UltrasonicController{
 		//If the robot is too close to the wall
 		else if (distError < 0){
 			//If too close to wall, robot goes backward
-			if (distError <= -22){
+			if (this.distance <= 8){
 				this.leftMotor.setSpeed(this.motorMedium);
-				this.rightMotor.setSpeed(this.motorMedium);
-				this.leftMotor.backward();
-				this.rightMotor.backward();				
-			}
-			else if (distError <= -15 && distError >= -22){
-				this.leftMotor.setSpeed(this.motorHigh);
 				this.rightMotor.setSpeed(this.motorHigh);
-				this.leftMotor.forward();
+				this.leftMotor.backward();
 				this.rightMotor.backward();				
 			}
 			//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster

@@ -64,7 +64,7 @@ public class BangBangController implements UltrasonicController{
 				this.rightMotor.backward();				
 			}
 			else if (distError <= -15 && distError >= -22){
-				this.leftMotor.setSpeed(this.motorHigh);
+				this.leftMotor.setSpeed(this.motorLow);
 				this.rightMotor.setSpeed(this.motorHigh);
 				this.leftMotor.forward();
 				this.rightMotor.backward();				
