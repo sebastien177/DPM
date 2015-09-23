@@ -5,7 +5,7 @@ public class PController implements UltrasonicController {
 	
 	private final int bandCenter, bandwidth;
 	private final int motorStraight = 200, FILTER_OUT = 20;
-	private int maxSpeedLimit = 350;
+	private int maxSpeedLimit = 300;
 	private int minSpeedLimit = 100;
 	private int newHighMotor, newLowMotor;
 	private EV3LargeRegulatedMotor leftMotor, rightMotor;
@@ -48,7 +48,7 @@ public class PController implements UltrasonicController {
 			this.distance = distance;
 		}
 		
-		
+		//If there is no error, we let the robot go straight ahead
 		if(Math.abs(distError)<= this.bandwidth){
 			this.leftMotor.setSpeed(this.motorStraight);
 			this.rightMotor.setSpeed(this.motorStraight);
@@ -60,22 +60,29 @@ public class PController implements UltrasonicController {
 			this.distError = this.distance - this.bandCenter;
 			
 		}
-		
+		//If the robot is too far from the wall
+		//If too far, robot will have to move to the left, right wheel moving faster
 		else if (distError > 0 && distError < 200){
 			turn(this.rightMotor, this.leftMotor);
 		}
 		
+		else if(distError >= 200){
+			turnCornerConvex();
+		}
+		
+		//If the robot is too close to the wall 3 scenarios happen
 		else if (distError < 0){
-			//If too close to wall, robot goes backward
-			if (distError <= -22){
+			//If its almost touching the wall, robot goes backward
+			if (distError <= -26){
 				this.leftMotor.setSpeed(this.motorStraight);
 				this.rightMotor.setSpeed(this.motorStraight);
 				this.leftMotor.backward();
 				this.rightMotor.backward();				
 			}
-			else if (distError <= -15 && distError >= -22){
-				this.leftMotor.setSpeed(this.motorStraight+50);
-				this.rightMotor.setSpeed(this.motorStraight+50);
+			// Once the robot goes backward straight, it turns at an angle to replace itself
+			else if (distError <= -15 && distError > -26){
+				this.leftMotor.setSpeed(this.motorStraight+70);
+				this.rightMotor.setSpeed(this.motorStraight+70);
 				this.leftMotor.forward();
 				this.rightMotor.backward();				
 			}
@@ -88,8 +95,7 @@ public class PController implements UltrasonicController {
 		
 
 	}
-	
-	
+	// Turn method following P style related to Error. Called in different scenarios.
 	public void turn (EV3LargeRegulatedMotor motorToSpeed,EV3LargeRegulatedMotor motorToSlow){
 		//Setting new speeds related to error
 		newHighMotor = (this.motorStraight + Math.abs(this.distError)*6);
@@ -99,6 +105,7 @@ public class PController implements UltrasonicController {
 		if (newHighMotor > this.maxSpeedLimit){
 			motorToSpeed.setSpeed(this.maxSpeedLimit);
 		}
+		// New High speed is set
 		else{
 			motorToSpeed.setSpeed(newHighMotor);			
 		}
@@ -107,6 +114,7 @@ public class PController implements UltrasonicController {
 		if (newLowMotor < this.minSpeedLimit){
 			motorToSlow.setSpeed(this.minSpeedLimit);
 		}
+		//New Slow speed is set
 		else{
 			motorToSlow.setSpeed(newLowMotor);			
 		}
@@ -116,6 +124,14 @@ public class PController implements UltrasonicController {
 		//error is recalculated for future reference
 		this.distError = this.distance - this.bandCenter;
 		
+	}
+	
+	//Wider Turns
+	public void turnCornerConvex (){
+		rightMotor.setSpeed(motorStraight+50);
+		leftMotor.setSpeed(motorStraight);
+		rightMotor.forward();
+		leftMotor.forward();
 	}
 
 	
