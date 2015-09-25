@@ -10,8 +10,9 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 public class Odometer extends Thread {
 	//Robot position
 	private double x, y, theta;
-	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
-	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
+	
+	private static EV3LargeRegulatedMotor leftMotor = null;
+	private static EV3LargeRegulatedMotor rightMotor = null;
 	
 	//Robot Constants
 	private static final double wheelRadius = 2.1;
@@ -29,11 +30,13 @@ public class Odometer extends Thread {
 	private Object lock;
 
 	// default constructor
-	public Odometer() {
+	public Odometer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
 		x = 0.0;
 		y = 0.0;
 		theta = 0.0;
 		lock = new Object();
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
 	}
 
 	// run method (required for Thread)

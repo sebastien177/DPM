@@ -27,7 +27,7 @@ public class Lab2 {
 		// some objects that need to be instantiated
 		
 		final TextLCD t = LocalEV3.get().getTextLCD();
-		Odometer odometer = new Odometer();
+		Odometer odometer = new Odometer(leftMotor, rightMotor);
 		OdometryDisplay odometryDisplay = new OdometryDisplay(odometer,t);
 		OdometryCorrection odometryCorrection = new OdometryCorrection(odometer);
 
