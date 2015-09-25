@@ -8,26 +8,20 @@ import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
 public class Odometer extends Thread {
-	// robot position
+	//Robot position
 	private double x, y, theta;
-	
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
 	
-	//Wheel Radius
-	double leftRadius = 2.1;
-	double rightRadius = 2.1;
-	double wheelDistance = 15.4;
+	//Robot Constants
+	private static final double wheelRadius = 2.1;
+	private static final double wheelDistance = 15.4;
 	
-	// Get Tacho counts for both wheels
-	double oldTachoLeft = leftMotor.getTachoCount();
-	double oldTachoRight = rightMotor.getTachoCount();
+	//Tacho values for Odometer
+	private double tachoLeftLast = 0;
+	private double tachoRightLast = 0;
 	
-	//Tachometer values
-	double currentTachoLeft, currentTachoRight, deltaTachoLeft, deltaTachoRight;
-	//Angles
-	double leftArc, rightArc,thetaChange, arcLengthTravelled;
-	
+
 	// odometer update period, in ms
 	private static final long ODOMETER_PERIOD = 25;
 
@@ -45,40 +39,44 @@ public class Odometer extends Thread {
 	// run method (required for Thread)
 	public void run() {
 		long updateStart, updateEnd;
+		double centerChange; // Delta C_n in equations
+		double angleChange; // Delta Theta_n in equations
 
 		while (true) {
 			updateStart = System.currentTimeMillis();
 			// put (some of) your odometer code here
+			
+			// Getting tacho counts for left and right wheel
+			double tachoLeftNow = leftMotor.getTachoCount();
+			double tachoRightNow = rightMotor.getTachoCount();
+						
+			// Calculating the change in rotation of each wheel
+			double deltaTachoLeft = tachoLeftNow - tachoLeftLast;
+			double deltaTachoRight = tachoRightNow - tachoRightLast;
+			
+			//Update for next cycle
+			this.tachoLeftLast = tachoLeftNow;
+			this.tachoRightLast = tachoRightNow;
+			
+			//Wheel Distance
+			
+			double leftWheelDistance = this.wheelRadius * deltaTachoLeft * (Math.PI/180);
+			double rightWheelDistance = this.wheelRadius * deltaTachoRight * (Math.PI/180);
+			
+			//Robot Changes
+			centerChange =  (leftWheelDistance+rightWheelDistance)/2;
+			angleChange = (leftWheelDistance-rightWheelDistance)/wheelDistance;
 
 			synchronized (lock) {
 				// don't use the variables x, y, or theta anywhere but here!
 				theta = -0.7376;
+				this.theta = theta + angleChange;
+				double deltaX = centerChange * Math.sin(this.theta);
+				double deltaY = centerChange * Math.cos(this.theta);
 				
-				//Getting Tacho Count from each motor
-				currentTachoLeft = leftMotor.getTachoCount();
-				currentTachoRight = rightMotor.getTachoCount();
+				this.x = this.x + deltaX;
+				this.y = this.y + deltaY;
 				
-				//Delta Tacho Values
-				deltaTachoLeft = currentTachoLeft - oldTachoLeft;
-				deltaTachoRight = currentTachoRight - oldTachoRight;
-				
-				//Wheel Arcs
-				leftArc = Math.toRadians(deltaTachoLeft)*leftRadius;
-				rightArc = Math.toRadians(deltaTachoRight)*rightRadius;
-				
-				//Change in theta
-				thetaChange = (rightArc - leftArc)/wheelDistance;
-				
-				//Distance travelled
-				arcLengthTravelled = (rightArc+leftArc)/2;
-				
-				setX(x+arcLengthTravelled*Math.cos(Math.toRadians(theta + thetaChange/2)));
-				setY(y+arcLengthTravelled*Math.sin(Math.toRadians(theta + thetaChange/2)));
-				setTheta(theta + Math.toDegrees(thetaChange));
-				
-				//Update values
-				oldTachoLeft = currentTachoLeft;
-				oldTachoRight = currentTachoRight;
 			}
 
 			// this ensures that the odometer only runs once every period
