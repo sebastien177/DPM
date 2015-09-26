@@ -1,21 +1,11 @@
+/* 
+ * OdometryCorrection.java
+ */
 package ev3Odometer;
-
-//OdometryCorrection.java
-
-import lejos.ev3.*;
-import lejos.hardware.ev3.LocalEV3;
-import lejos.hardware.port.Port;
-import lejos.hardware.sensor.*;
-import lejos.hardware.*;
-import lejos.robotics.SampleProvider;
-
-
 
 public class OdometryCorrection extends Thread {
 	private static final long CORRECTION_PERIOD = 10;
 	private Odometer odometer;
-	
-	private static final Port csPort = LocalEV3.get().getPort("S1");
 
 	// constructor
 	public OdometryCorrection(Odometer odometer) {
@@ -25,9 +15,6 @@ public class OdometryCorrection extends Thread {
 	// run method (required for Thread)
 	public void run() {
 		long correctionStart, correctionEnd;
-		SensorModes colorSensor =  new EV3ColorSensor(csPort);
-		colorSensor.setCurrentMode("Color ID");
-		
 
 		while (true) {
 			correctionStart = System.currentTimeMillis();
