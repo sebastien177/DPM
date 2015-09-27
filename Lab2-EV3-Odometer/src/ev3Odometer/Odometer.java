@@ -10,8 +10,10 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 public class Odometer extends Thread {
 	//Robot position
 	private double x, y, theta;
+
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
+
 	
 	//Robot Constants
 	private static final double wheelRadius = 2.1;
@@ -30,12 +32,13 @@ public class Odometer extends Thread {
 
 	// default constructor
 	public Odometer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
-		this.leftMotor = leftMotor;
-		this.rightMotor = rightMotor;
 		x = 0.0;
 		y = 0.0;
 		theta = 0.0;
+		//theta = -0.7376;
 		lock = new Object();
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
 	}
 
 	// run method (required for Thread)
@@ -71,6 +74,7 @@ public class Odometer extends Thread {
 
 			synchronized (lock) {
 				// don't use the variables x, y, or theta anywhere but here!
+
 				//theta = -0.7376;
 				this.theta = theta + angleChange;
 				double deltaX = displacement * Math.sin(this.theta);
@@ -78,6 +82,7 @@ public class Odometer extends Thread {
 				//Current y and x get updated
 				this.x = this.x + deltaX;
 				this.y = this.y + deltaY;
+
 				
 			}
 
