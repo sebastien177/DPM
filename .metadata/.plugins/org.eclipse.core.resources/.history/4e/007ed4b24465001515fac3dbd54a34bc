@@ -19,10 +19,9 @@ public class OdometryCorrection extends Thread {
 	private static final int THRESHOLD = 520;
 	private static final double OFFSET = 5.5; // difference between sensor and wheels
 	private static final double HALF_SQUARE = 15.24;
-	private int sensorCount = 0;
+	
 	private Odometer odometer;
 	private EV3ColorSensor lightSensor = new EV3ColorSensor(SensorPort.S1);
-	
 	
 
 
@@ -34,20 +33,15 @@ public class OdometryCorrection extends Thread {
 
 	// run method (required for Thread)
 	public void run() {
-		long correctionStart, correctionEnd;	
+		long correctionStart, correctionEnd;
+		
+	
+		
 
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 
 			// put your correction code here
-			
-			//detection of black lines
-			 if (lightSensor.getFloodlight() <= THRESHOLD){
-				//keep track of when line is crossed
-				 sensorCount++;
-				
-			
-			}
 
 			// this ensure the odometry correction occurs only once every period
 			correctionEnd = System.currentTimeMillis();
@@ -63,5 +57,4 @@ public class OdometryCorrection extends Thread {
 			}
 		}
 	}
-
 }

@@ -42,11 +42,8 @@ public class OdometryCorrection extends Thread {
 			// put your correction code here
 			
 			//detection of black lines
-			 if (lightSensor.getFloodlight() <= THRESHOLD){
-				//keep track of when line is crossed
-				 sensorCount++;
-				
-			
+			(lightSensor.getFloodlight() < THRESHOLD){
+				sensorCount++;
 			}
 
 			// this ensure the odometry correction occurs only once every period
@@ -63,5 +60,4 @@ public class OdometryCorrection extends Thread {
 			}
 		}
 	}
-
 }

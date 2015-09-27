@@ -10,8 +10,8 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 public class Odometer extends Thread {
 	//Robot position
 	private double x, y, theta;
-	private EV3LargeRegulatedMotor leftMotor;
-	private EV3LargeRegulatedMotor rightMotor;
+	private static final EV3LargeRegulatedMotor leftMotor;
+	private static final EV3LargeRegulatedMotor rightMotor;
 	
 	//Robot Constants
 	private static final double wheelRadius = 2.1;
@@ -41,7 +41,7 @@ public class Odometer extends Thread {
 	// run method (required for Thread)
 	public void run() {
 		long updateStart, updateEnd;
-		double displacement; // Magnitude
+		double centerChange; // Delta C_n in equations
 		double angleChange; // Delta Theta_n in equations
 
 		while (true) {
@@ -66,16 +66,16 @@ public class Odometer extends Thread {
 			double rightWheelDistance = this.wheelRadius * deltaTachoRight * (Math.PI/180);
 			
 			//Robot Changes
-			displacement =  (leftWheelDistance+rightWheelDistance)/2;
+			centerChange =  (leftWheelDistance+rightWheelDistance)/2;
 			angleChange = (leftWheelDistance-rightWheelDistance)/wheelDistance;
 
 			synchronized (lock) {
 				// don't use the variables x, y, or theta anywhere but here!
-				//theta = -0.7376;
+				theta = -0.7376;
 				this.theta = theta + angleChange;
-				double deltaX = displacement * Math.sin(this.theta);
-				double deltaY = displacement * Math.cos(this.theta);
-				//Current y and x get updated
+				double deltaX = centerChange * Math.sin(this.theta);
+				double deltaY = centerChange * Math.cos(this.theta);
+				
 				this.x = this.x + deltaX;
 				this.y = this.y + deltaY;
 				

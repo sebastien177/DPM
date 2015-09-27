@@ -71,7 +71,7 @@ public class Odometer extends Thread {
 
 			synchronized (lock) {
 				// don't use the variables x, y, or theta anywhere but here!
-				//theta = -0.7376;
+				theta = -0.7376;
 				this.theta = theta + angleChange;
 				double deltaX = displacement * Math.sin(this.theta);
 				double deltaY = displacement * Math.cos(this.theta);
