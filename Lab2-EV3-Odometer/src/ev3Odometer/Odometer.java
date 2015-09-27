@@ -34,6 +34,7 @@ public class Odometer extends Thread {
 		x = 0.0;
 		y = 0.0;
 		theta = 0.0;
+		//theta = -0.7376;
 		lock = new Object();
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
@@ -72,13 +73,12 @@ public class Odometer extends Thread {
 
 			synchronized (lock) {
 				// don't use the variables x, y, or theta anywhere but here!
-				theta = -0.7376;
 				this.theta = theta + angleChange;
 				double deltaX = centerChange * Math.sin(this.theta);
 				double deltaY = centerChange * Math.cos(this.theta);
 				
-				this.x = this.x + deltaX;
-				this.y = this.y + deltaY;
+				this.x += deltaX;
+				this.y += this.y + deltaY;
 				
 			}
 
