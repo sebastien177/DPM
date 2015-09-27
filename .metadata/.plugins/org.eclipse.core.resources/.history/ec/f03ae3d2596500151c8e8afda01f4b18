@@ -28,13 +28,13 @@ public class OdometryCorrection extends Thread {
 	// constructor
 	public OdometryCorrection(Odometer odometer) {
 		this.odometer = odometer;
+		lightSensor.setFloodlight(true);
 	}
 
 	// run method (required for Thread)
 	public void run() {
 		long correctionStart, correctionEnd;	
-		SampleProvider csColor = lightSensor.getMode("Red");
-		
+
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 
@@ -42,7 +42,6 @@ public class OdometryCorrection extends Thread {
 			
 			//detection of black lines
 			 if (lightSensor.getColorID() == 1 ){
-				 Sound.beep(); 
 				//keep track of when line is crossed
 				 sensorCount++;
 				 double robotDistance;

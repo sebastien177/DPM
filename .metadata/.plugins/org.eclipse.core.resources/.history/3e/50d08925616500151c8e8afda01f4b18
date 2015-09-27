@@ -34,7 +34,8 @@ public class OdometryCorrection extends Thread {
 	public void run() {
 		long correctionStart, correctionEnd;	
 		SampleProvider csColor = lightSensor.getMode("Red");
-		
+		float[] csData = new float[csColor.sampleSize()];
+
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 

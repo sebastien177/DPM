@@ -16,33 +16,33 @@ import lejos.hardware.sensor.EV3ColorSensor;
 
 public class OdometryCorrection extends Thread {
 	private static final long CORRECTION_PERIOD = 10;
-	private static final double SENSOR_DISTANCE = 4.5; // difference between sensor and wheels
+	private static final int THRESHOLD = 520;
+	private static final double SENSOR_DISTANCE = 5.5; // difference between sensor and wheels
 	private static final double HALF_SQUARE = 15.24;
 	private int sensorCount = 0;
 	private Odometer odometer;
 	private EV3ColorSensor lightSensor = new EV3ColorSensor(SensorPort.S1);
-
+	
 	
 
 
 	// constructor
 	public OdometryCorrection(Odometer odometer) {
 		this.odometer = odometer;
+		lightSensor.setFloodlight(true);
 	}
 
 	// run method (required for Thread)
 	public void run() {
 		long correctionStart, correctionEnd;	
-		SampleProvider csColor = lightSensor.getMode("Red");
-		
+
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 
 			// put your correction code here
 			
 			//detection of black lines
-			 if (lightSensor.getColorID() == 1 ){
-				 Sound.beep(); 
+			 if (lightSensor.getFloodlight() <= THRESHOLD){
 				//keep track of when line is crossed
 				 sensorCount++;
 				 double robotDistance;
@@ -84,15 +84,11 @@ public class OdometryCorrection extends Thread {
 				
 				 case 8: //ROBOT RETURNS X	
 					 robotDistance = (HALF_SQUARE) + SENSOR_DISTANCE;
-				 		this.odometer.setX(robotDistance);	 		
+				 		this.odometer.setX(robotDistance);
+				 
+				 
+				 		
 				 }
-				
-				 try{ 
-						Thread.sleep(160);
-					}
-					catch (InterruptedException e){
-
-					}
 				
 			
 			}

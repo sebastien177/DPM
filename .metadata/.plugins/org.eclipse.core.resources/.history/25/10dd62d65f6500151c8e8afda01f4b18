@@ -28,13 +28,13 @@ public class OdometryCorrection extends Thread {
 	// constructor
 	public OdometryCorrection(Odometer odometer) {
 		this.odometer = odometer;
+		SampleProvider csColor = lightSensor.getMode("Red");
 	}
 
 	// run method (required for Thread)
 	public void run() {
 		long correctionStart, correctionEnd;	
-		SampleProvider csColor = lightSensor.getMode("Red");
-		
+
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 
