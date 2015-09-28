@@ -1,0 +1,149 @@
+package ev3Odometer;
+
+//OdometryCorrection.java
+
+import lejos.ev3.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.hardware.*;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.port.Port;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
+
+
+
+public class OdometryCorrection extends Thread {
+	private static final long CORRECTION_PERIOD = 10;
+	private static final double SENSOR_DISTANCE = 4.5; // difference between sensor and wheels
+	private static final double HALF_SQUARE = 15.24;
+	private int sensorCount = 0;
+	private Odometer odometer;
+	private double prevDistanceY;
+	private double prevDistanceX;
+	private static EV3ColorSensor lightSensor;
+	
+
+
+	// constructor
+	public OdometryCorrection(Odometer odometer, EV3ColorSensor lightSensor) {
+		this.odometer = odometer;
+		this.lightSensor = lightSensor; 
+	}
+
+	// run method (required for Thread)
+	public void run() {
+		long correctionStart, correctionEnd;	
+		float[] sampleRed = {0};
+		
+		while (true) {
+			correctionStart = System.currentTimeMillis();
+			lightSensor.getRedMode().fetchSample(sampleRed, 0);
+			// put your correction code here
+			
+			//detection of black lines when the amount of red returned is smaller than 0.3
+			 if (sampleRed[0]*100 < 30){
+				 Sound.beep(); 
+				//keep track of when line is crossed
+				 lineCount++;
+				 double robotDistance;
+				 
+	                if (turnCount == 1 || turnCount == 3) {
+	                    // IF FIRST LINE AFTER FIRST TURN THEN SET THE X VALUE TO PROJECTION OF ITS POSITION
+	                    // ON THE X AXIS WITH ORIGIN SET TO THE CENTER OF THE FIRST TILE
+	                    if (lineCount == 1 && turnCount == 1)
+	                        odometer.setX(DISTANCE_BETWEEN_FIRST_LINE_AND_CENTER - DISTANCE_BETWEEN_SENSOR_AND_CENTER);
+
+	                    /*
+	                     * FOLLOWING OPTIMIZED TO IMPROVE ACCURACY OF 3 X 3 SQUARE TRAJECTORY
+	                     * TURNCOUNT AND LINECOUNTS CONDITIONS SHOULD BE ALTERED SLIGHTLY FOR
+	                     * DIFFERENT SHAPES. IT COULD ALSO SIMPLY BE REMOVED
+	                     */
+
+	                    // STORE X POSITION ONCE REACHED FIRST LINE
+	                    if (lineCount == 1)
+	                        prevPosition = odometer.getX();
+	                    
+	                    // CORRECT X POSITION ONCE REACHED SECOND LINE BY KNOWN DISTANCE BETWEEN LINES
+	                    else if (lineCount == 2) {
+	                        // IF FIRST TURN THEN SUBTRACT KNOWN DISTANCE
+	                        if (turnCount == 1)
+	                            odometer.setX(prevPosition + DISTANCE_BETWEEN_LINES);
+	                        // OTHERWISE ADD
+	                        else
+	                            odometer.setX(prevPosition - DISTANCE_BETWEEN_LINES);
+	                    }
+	                }
+
+	                // CHANGE Y POSITION ON ZEROETH AND SECOND TURN
+	                else {
+	                    // IF FIRST LINE BEFORE ANY TURN THEN SET THE Y VALUE TO PROJECTION OF ITS POSITION
+	                    // ON THE Y AXIS WITH ORIGIN SET TO THE CENTER OF THE FIRST TILE
+	                    if (lineCount == 1 && turnCount == 0)
+	                        odometer.setY(DISTANCE_BETWEEN_FIRST_LINE_AND_CENTER - DISTANCE_BETWEEN_SENSOR_AND_CENTER);
+
+	                    /*
+	                     * FOLLOWING OPTIMIZED TO IMPROVE ACCURACY OF 3 X 3 SQUARE TRAJECTORY
+	                     * TURNCOUNT AND LINECOUNTS CONDITIONS SHOULD BE ALTERED SLIGHTLY FOR
+	                     * DIFFERENT SHAPES. IT COULD ALSO SIMPLY BE REMOVED
+	                     */
+	                    
+	                    // STORE Y POSITION ON CE REACHED FIRST LINE
+	                    if (lineCount == 1)
+	                        prevPosition = odometer.getY();
+
+	                    // CORRECT Y POSITION ONCE REACHED SECOND LINE BY KNOWN DISTANCE BETWEEN LINES
+	                    else if (lineCount == 2) {
+	                        // IF SECOND TURN THEN SUBTRACT KNOWN DISTANCE
+	                        if (turnCount == 2)
+	                            odometer.setY(prevPosition - DISTANCE_BETWEEN_LINES);
+	                        // OTHERWISE ADD
+	                        else
+	                            odometer.setY(prevPosition + DISTANCE_BETWEEN_LINES);
+	                    }
+	                }
+
+	                // DELAY TO AVOID COUNTING SAME LINE SEVERAL TIMES
+	                // 1000 MILLISECONDS OBTAINED EXPERIMENTALLY
+	                Delay.msDelay(1000);
+	            }
+	            // KEEP TRACK OF TURNS
+	            else if (SquareDriver.turning) {
+	                // RESET LINE COUNTER
+	                lineCount = 0;
+
+	                // INCREMENT AND PRINT TURN COUNT
+	                turnCount++;
+	                LCD.drawString("Turns: " + String.valueOf(turnCount), 0, 5);
+
+	                // DELAY TO AVOID COUNTING SAME TURN SEVERAL TIMES
+	                // 2500 MILLISECONDS OBTAINED EXPERIMENTALLY
+	                Delay.msDelay(2500);
+	            }
+				 try{ 
+						Thread.sleep(160);
+					}
+					catch (InterruptedException e){
+
+					}
+				
+			
+			}
+
+			// this ensure the odometry correction occurs only once every period
+			correctionEnd = System.currentTimeMillis();
+			if (correctionEnd - correctionStart < CORRECTION_PERIOD) {
+				try {
+					Thread.sleep(CORRECTION_PERIOD
+							- (correctionEnd - correctionStart));
+				} catch (InterruptedException e) {
+					// there is nothing to be done here because it is not
+					// expected that the odometry correction will be
+					// interrupted by another thread
+				}
+			}
+		}
+	}
+
+}

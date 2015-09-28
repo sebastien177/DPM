@@ -16,8 +16,8 @@ public class Odometer extends Thread {
 
 	
 	//Robot Constants
-	private static final double wheelRadius = 2.1;
-	private static final double wheelDistance = 15.4;
+	private static final double wheelRadius = 2.145;
+	private static final double wheelDistance = 15.25;
 	
 	//Tacho values for Odometer
 	private double tachoLeftLast = 0;
