@@ -20,28 +20,30 @@ public class OdometryCorrection extends Thread {
 	private static final double HALF_SQUARE = 15.24;
 	private int sensorCount = 0;
 	private Odometer odometer;
-	private EV3ColorSensor lightSensor = new EV3ColorSensor(SensorPort.S1);
-
+	private double prevDistanceY;
+	private double prevDistanceX;
+	private static EV3ColorSensor lightSensor;
 	
 
 
 	// constructor
-	public OdometryCorrection(Odometer odometer) {
+	public OdometryCorrection(Odometer odometer, EV3ColorSensor lightSensor) {
 		this.odometer = odometer;
+		this.lightSensor = lightSensor; 
 	}
 
 	// run method (required for Thread)
 	public void run() {
 		long correctionStart, correctionEnd;	
-		SampleProvider csColor = lightSensor.getMode("Red");
+		float[] sampleRed = {0};
 		
 		while (true) {
 			correctionStart = System.currentTimeMillis();
-
+			lightSensor.getRedMode().fetchSample(sampleRed, 0);
 			// put your correction code here
 			
-			//detection of black lines
-			 if (lightSensor.getColorID() == 1 ){
+			//detection of black lines when the amount of red returned is smaller than 0.3
+			 if (sampleRed[0]*100 < 30){
 				 Sound.beep(); 
 				//keep track of when line is crossed
 				 sensorCount++;

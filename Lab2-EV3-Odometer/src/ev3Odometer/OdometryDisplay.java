@@ -5,23 +5,28 @@
 package ev3Odometer;
 
 import lejos.hardware.lcd.TextLCD;
+import lejos.hardware.sensor.EV3ColorSensor;
 
 public class OdometryDisplay extends Thread {
+	private static EV3ColorSensor lightSensor;
 	private static final long DISPLAY_PERIOD = 250;
 	private Odometer odometer;
 	private TextLCD t;
 
 	// constructor
-	public OdometryDisplay(Odometer odometer, TextLCD t) {
+	public OdometryDisplay(Odometer odometer, TextLCD t, EV3ColorSensor lightSensor) {
 		this.odometer = odometer;
 		this.t = t;
+		this.lightSensor = lightSensor;
 	}
 
 	// run method (required for Thread)
 	public void run() {
 		long displayStart, displayEnd;
 		double[] position = new double[3];
-
+	
+		float[] sampleRed = {0};
+		
 		// clear the display once
 		t.clear();
 
@@ -32,6 +37,8 @@ public class OdometryDisplay extends Thread {
 			t.drawString("X:              ", 0, 0);
 			t.drawString("Y:              ", 0, 1);
 			t.drawString("T:              ", 0, 2);
+			lightSensor.getRedMode().fetchSample(sampleRed, 0);
+			t.drawInt((int)(sampleRed[0]*100), 0, 7);
 
 			// get the odometry information
 			odometer.getPosition(position, new boolean[] { true, true, true });

@@ -8,6 +8,8 @@ import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
 
 public class Lab2 {
 	
@@ -16,6 +18,7 @@ public class Lab2 {
 	// Right motor connected to output D
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
+	private static final EV3ColorSensor lightSensor = new EV3ColorSensor(SensorPort.S1);
 
 	// Constants
 	public static final double WHEEL_RADIUS = 2.145;
@@ -28,8 +31,8 @@ public class Lab2 {
 		
 		final TextLCD t = LocalEV3.get().getTextLCD();
 		Odometer odometer = new Odometer(leftMotor, rightMotor);
-		OdometryDisplay odometryDisplay = new OdometryDisplay(odometer,t);
-		OdometryCorrection odometryCorrection = new OdometryCorrection(odometer);
+		OdometryDisplay odometryDisplay = new OdometryDisplay(odometer,t, lightSensor);
+		OdometryCorrection odometryCorrection = new OdometryCorrection(odometer, lightSensor);
 
 		do {
 			// clear the display
@@ -62,7 +65,7 @@ public class Lab2 {
 			
 			odometer.start();
 			odometryDisplay.start();
-			// odometryCorrection.start();
+			 odometryCorrection.start();
 
 			// spawn a new Thread to avoid SquareDriver.drive() from blocking
 			(new Thread() {
