@@ -16,7 +16,7 @@ import lejos.hardware.sensor.EV3ColorSensor;
 
 public class OdometryCorrection extends Thread {
 	private static final long CORRECTION_PERIOD = 10;
-	private static final double SENSOR_DISTANCE = 4.5; // difference between sensor and wheels
+	private static final double SENSOR_DISTANCE = 4.2; // difference between sensor and wheels
 	private static final double HALF_SQUARE = 15.24;
 	private int sensorCount = 0;
 	private Odometer odometer;
@@ -43,58 +43,54 @@ public class OdometryCorrection extends Thread {
 			// put your correction code here
 			
 			//detection of black lines when the amount of red returned is smaller than 0.3
-			 if (sampleRed[0]*100 < 30){
+			 if (sampleRed[0]*100 < 35){
 				 Sound.beep(); 
 				//keep track of when line is crossed
 				 sensorCount++;
 				 double robotDistance;
-				 switch(sensorCount){
-				 case 0: break;
-				 //Robot crosses first line
 				 
-				 case 1: // ROBOT GOES FORWARD Y
-				 		// Substracting sensor distance
+				 if (sensorCount == 1){
 				 		robotDistance = HALF_SQUARE - SENSOR_DISTANCE;
 				 		this.odometer.setY(robotDistance);
+				 		this.prevDistanceY = robotDistance;
+				 }
 				 
-				 case 2: // ROBOT GOES FORWARD Y
+				 if (sensorCount == 2){ // ROBOT GOES FORWARD Y
 					 	// Substracting sensor distance
-				 		robotDistance = (HALF_SQUARE*3) - SENSOR_DISTANCE;
+					 	robotDistance = this.prevDistanceY + 2*(HALF_SQUARE);
 				 		this.odometer.setY(robotDistance);
+				 }
 				 
-				 case 3: // ROBOT TURNS RIGHT X
+				 if (sensorCount == 3){ // ROBOT TURNS RIGHT X
 					 	// Substracting sensor distance
 				 		robotDistance = (HALF_SQUARE) - SENSOR_DISTANCE;
 				 		this.odometer.setX(robotDistance);	
+				 		this.prevDistanceX = robotDistance;
+				 }
 				 
-				 case 4: // ROBOT TURNS RIGHT X
+				 if (sensorCount == 4){ // ROBOT TURNS RIGHT X
 					 	// Substracting sensor distance
-				 		robotDistance = (HALF_SQUARE*3) - SENSOR_DISTANCE;
+				 		robotDistance = this.prevDistanceX + 2*(HALF_SQUARE);
 				 		this.odometer.setX(robotDistance);	
+				 }
 				 
-				 case 5: //ROBOT RETURNS Y
-					 robotDistance = (HALF_SQUARE*3) + SENSOR_DISTANCE;
-				 		this.odometer.setY(robotDistance);	
-				
-				 case 6: //ROBOT RETURNS Y
-					 robotDistance = (HALF_SQUARE) + SENSOR_DISTANCE;
-				 		this.odometer.setY(robotDistance);	
-				
-				 case 7: //ROBOT RETURNS X	
-					 robotDistance = (HALF_SQUARE*3) + SENSOR_DISTANCE;
-				 		this.odometer.setX(robotDistance);
-				
-				 case 8: //ROBOT RETURNS X	
-					 robotDistance = (HALF_SQUARE) + SENSOR_DISTANCE;
-				 		this.odometer.setX(robotDistance);	 		
+				 if (sensorCount == 5){ //ROBOT RETURNS Y
+				 		this.prevDistanceY = this.odometer.getY();
 				 }
 				
-				 try{ 
-						Thread.sleep(160);
-					}
-					catch (InterruptedException e){
-
-					}
+				 if (sensorCount == 6){ //ROBOT RETURNS Y
+					 	robotDistance = this.prevDistanceY - 2*HALF_SQUARE;
+				 		this.odometer.setY(robotDistance);
+				 }
+				
+				 if (sensorCount == 7){ //ROBOT RETURNS X	
+				 		this.prevDistanceX = this.odometer.getX();
+				 }
+				
+				 if (sensorCount == 8){ //ROBOT RETURNS X	
+					 	robotDistance = this.prevDistanceX - 2*HALF_SQUARE;
+				 		this.odometer.setX(robotDistance);	 		
+				 }
 				
 			
 			}

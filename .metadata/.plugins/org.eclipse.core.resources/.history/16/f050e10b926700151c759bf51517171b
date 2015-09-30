@@ -1,0 +1,60 @@
+package ev3Navigation;
+/* Lab 3 Navigation
+ * Group 7
+ * Sebastien Arrese & Arnold Kokoroko
+ */
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+
+public class Navigation extends Thread {
+	double currentX, currentY, targetX, targetY; // Current Position / Target Position
+	double currentTheta;
+	Odometer odometer; 
+
+	// Class constants
+	private static final long navigationPeriod = 25;
+	private static final double wheelRadius = 2.145;
+	private static final double wheelDistance = 15.25;
+	private static final double errorThreshold = 1; 
+
+	private static final int rotationSpeed = 180; 
+	private static final int fwdSpeed = 360; 
+	private static final int turnSpeed = 240; 
+
+
+	// Coordinates for Navigation
+	Coordinate c0 = new Coordinate(0, 0); // Start 0,0
+	Coordinate c1 = new Coordinate(60, 30);
+	Coordinate c2 = new Coordinate(30, 30);
+	Coordinate c3 = new Coordinate(30, 60);
+	Coordinate c4 = new Coordinate(60, 0); // End 0,0
+	
+	public Navigation(Odometer odometer) {
+		this.odometer = odometer;
+	}
+	
+	public void run (){
+		long updateStart, updateEnd;
+		
+		while (true) {
+			updateStart = System.currentTimeMillis();
+			currentX = odometer.getX();
+			currentY = odometer.getY();
+			currentTheta = odometer.getTheta()*(180/Math.PI); //Converting Radians to Pi
+			
+			if (currentTheta > 180) {
+				odometer.setTheta(currentTheta - 360);
+			} else if (currentTheta < -180) {
+				odometer.setTheta(currentTheta + 360);
+			}
+			
+			
+			
+			
+		}
+	}
+	
+	
+	
+	
+
+}

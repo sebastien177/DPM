@@ -10,17 +10,32 @@
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="true" key="wrap"/>
 		<item value="false" key="isRegEx"/>
+<<<<<<< HEAD
+=======
+		<item value="sleep" key="selection"/>
+>>>>>>> 6e77d9ca57a7e28bf8ed9b39ead43548612e4a3a
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="false" key="wholeword"/>
 		<item value="usData" key="selection"/>
 		<list key="findhistory">
+<<<<<<< HEAD
 			<item value="usData"/>
 			<item value="odometer"/>
 			<item value="port"/>
 			<item value="sensor"/>
 			<item value="wheelDist"/>
 			<item value="BangBangController"/>
+=======
+			<item value="sleep"/>
+			<item value="turning"/>
+			<item value="draw"/>
+			<item value="LCD"/>
+			<item value="theta"/>
+			<item value="odometrydis"/>
+			<item value="ColorId"/>
+			<item value="colorID"/>
+>>>>>>> 6e77d9ca57a7e28bf8ed9b39ead43548612e4a3a
 		</list>
 		<list key="replacehistory">
 		</list>

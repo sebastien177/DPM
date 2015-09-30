@@ -21,8 +21,8 @@ public class Lab2 {
 	private static final EV3ColorSensor lightSensor = new EV3ColorSensor(SensorPort.S1);
 
 	// Constants
-	public static final double WHEEL_RADIUS = 2.145;
-	public static final double TRACK = 15.25;
+	public static final double WHEEL_RADIUS = 2.17;
+	public static final double TRACK = 15.175;
 
 	public static void main(String[] args) {
 		int buttonChoice;
@@ -65,7 +65,7 @@ public class Lab2 {
 			
 			odometer.start();
 			odometryDisplay.start();
-			 odometryCorrection.start();
+			odometryCorrection.start();
 
 			// spawn a new Thread to avoid SquareDriver.drive() from blocking
 			(new Thread() {
