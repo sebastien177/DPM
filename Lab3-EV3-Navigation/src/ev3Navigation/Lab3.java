@@ -57,6 +57,14 @@ public class Lab3 {
 			navigation.start();
 		}
 		
+		else {
+			// Obstacle navigation NOT YET IMPLEMENTED
+		}
+		
+		// to end the program
+				while (Button.waitForAnyPress() != Button.ID_ESCAPE);
+				System.exit(0);
+		
 		
 	}
 

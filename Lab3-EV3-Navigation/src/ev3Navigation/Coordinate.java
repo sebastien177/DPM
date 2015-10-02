@@ -43,7 +43,7 @@ public class Coordinate {
 					&& (Math.abs(y - getY()) < errorMargin);
 		}
 
-		// Check what point robot is at
+		// Check if robot is at the Coordinate point targeted
 		public boolean isAtPoint(double x, double y) {
 			return (Math.abs(x - getX()) < errorMargin)
 					&& (Math.abs(y - getY()) < errorMargin);
