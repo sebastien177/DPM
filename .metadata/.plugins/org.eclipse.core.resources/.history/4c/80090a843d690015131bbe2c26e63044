@@ -40,9 +40,9 @@ public class Navigation extends Thread {
 		
 		while (true) {
 			updateStart = System.currentTimeMillis();
-			this.currentX = odometer.getX();
-			this.currentY = odometer.getY();
-			this.currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
+			currentX = odometer.getX();
+			currentY = odometer.getY();
+			currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
 			
 			if (currentTheta > 180) {
 				odometer.setTheta(currentTheta - 360);
@@ -57,19 +57,19 @@ public class Navigation extends Thread {
 				break;
 			} else if (c3.getIsVisited()) {
 				setCoordinate(c4);
-				c4.setIsVisited(currentX, currentY);
+				c4.setIsVisited(targetX, targetY);
 			} 
 			else if (c2.getIsVisited()) {
 				setCoordinate(c3);
-				c3.setIsVisited(currentX, currentY);
+				c3.setIsVisited(targetX, targetY);
 			} 
 			else if (c1.getIsVisited()) {
 				setCoordinate(c2);
-				c2.setIsVisited(currentX, currentY);
+				c2.setIsVisited(targetX, targetY);
 			} 
 			else {
 				setCoordinate(c1);
-				c1.setIsVisited(currentX, currentY);
+				c1.setIsVisited(targetX, targetY);
 			}
 			
 			travelTo(this.targetX, this.targetY); // travel to the target set just above
@@ -100,7 +100,7 @@ public class Navigation extends Thread {
 		double deltaX = x - this.currentX;
 		double deltaY = y - this.currentY;
 		double targetTheta = Math.toDegrees(Math.atan2(deltaY, deltaX));
-		double deltaTheta = targetTheta - this.currentTheta; 
+		double deltaTheta = targetTheta - Math.toDegrees(odometer.getTheta()); //NOT SURE IF IN RADS OR DEGREES
 		
 		// if the heading is off by more than acceptable error, we must correct
 		if (Math.abs(deltaTheta) > errorThreshold) {
@@ -115,7 +115,9 @@ public class Navigation extends Thread {
 	}	
 
 	public void turnTo(double theta) {
-		double rotate = theta - this.currentTheta;	
+		double currentTheta = Math.toDegrees(odometer.getTheta());
+		double rotate = theta - currentTheta;
+		
 		//Meaning Complete rotation
 		if (c0.isAtPoint(currentX, currentY) || c1.isAtPoint(currentX, currentY) || c2.isAtPoint(currentX, currentY) || c3.isAtPoint(currentX, currentY) || c4.isAtPoint(currentX, currentY)){
 			if (rotate> 180){

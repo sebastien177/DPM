@@ -39,7 +39,7 @@ public class Coordinate {
 
 		// Setter method to set visited
 		public void setIsVisited(double x, double y) {
-			this.isVisited = (Math.abs(x - getX()) < errorMargin)
+			isVisited = (Math.abs(x - getX()) < errorMargin)
 					&& (Math.abs(y - getY()) < errorMargin);
 		}
 
