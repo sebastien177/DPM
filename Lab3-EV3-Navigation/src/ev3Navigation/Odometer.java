@@ -109,7 +109,7 @@ public class Odometer extends Thread {
 			if (update[1])
 				position[1] = y;
 			if (update[2])
-				position[2] = theta;
+				position[2] = Math.toDegrees(theta);
 		}
 	}
 

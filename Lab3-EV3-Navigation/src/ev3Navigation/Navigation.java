@@ -5,6 +5,9 @@ package ev3Navigation;
  */
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
+/* This class makes the robot navigates from 1 coordinate to another one taking its 
+ * current position from odometer
+ */
 public class Navigation extends Thread {
 	double currentX, currentY, targetX, targetY; // Current Position / Target Position
 	double currentTheta;
@@ -99,8 +102,27 @@ public class Navigation extends Thread {
 		// Coordinate difference
 		double deltaX = x - this.currentX;
 		double deltaY = y - this.currentY;
-		double targetTheta = Math.toDegrees(Math.atan2(deltaY, deltaX));
+		//double deltaX = x;
+		//double deltaY = y;		
+		
+		double targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
 		double deltaTheta = targetTheta - this.currentTheta; 
+		
+		/*
+		 
+		double targetTheta = 0;
+		double deltaTheta = 0;
+		 
+		if (deltaX >= 0){
+			targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
+			deltaTheta = targetTheta - this.currentTheta; 
+		}
+		else if (deltaX < 0){
+			//targetTheta = (-180) - Math.toDegrees(Math.atan2(deltaY, deltaX));
+			targetTheta = 180;
+			deltaTheta = targetTheta - this.currentTheta; 
+		}
+		*/
 		
 		// if the heading is off by more than acceptable error, we must correct
 		if (Math.abs(deltaTheta) > errorThreshold) {
@@ -128,8 +150,8 @@ public class Navigation extends Thread {
 			rightMotor.setSpeed(rotationSpeed);
 			
 			//Rotation starts
-			leftMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), true);
-			rightMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), false);		
+			leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), true);
+			rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
 		}
 
 		//ADJUST BUT NOT ROTATE towards left
