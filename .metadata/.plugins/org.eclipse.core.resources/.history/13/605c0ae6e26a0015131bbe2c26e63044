@@ -1,0 +1,17 @@
+package ev3Navigation;
+/* Lab 3 Navigation
+ * Group 7
+ * Sebastien Arrese & Arnold Kokoroko
+ */
+import lejos.hardware.sensor.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.Button;
+
+public class ObstacleAvoidanceNavigation {
+	
+	private static final Port usPort = LocalEV3.get().getPort("S1");
+
+}

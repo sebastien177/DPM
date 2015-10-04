@@ -1,0 +1,52 @@
+package ev3Navigation;
+/* Lab 3 Navigation
+ * Group 7
+ * Sebastien Arrese & Arnold Kokoroko
+ */
+import lejos.hardware.sensor.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.Button;
+
+public class ObstacleAvoidanceNavigation extends Thread {
+	
+	private static final Port usPort = LocalEV3.get().getPort("S1");
+	double x, y, xTarget, yTarget; // current and target positions
+
+	double obstacleTheta; // theta when robot first sees obstacle
+
+	private static int countDistances; // the number of times sensor reads 255
+	boolean isNearObstacle = false;
+
+	// Class constants
+	private static final long navigationPeriod= 25;
+	private static final double leftRadius = 2.1; // left wheel radius (cm)
+	private static final double rightRadius = 2.1; // right wheel radius (cm)
+	private static final double wheelDistance = 15.5; // wheel track (cm)
+	private static final double errorThreshold = 1; // degrees off heading
+	private static final int tooClose = 20;
+
+	private static final int ROTATE_SPEED = 180; // big turns
+	private static final int FORWARD_SPEED = 360; // normal driving speed
+	private static final int OFF_COURSE_SPEED = 80; // large correction needed
+	private static final int ON_COURSE_SPEED = 220; // small correction needed
+	private static final int OFF_COURSE_ANGLE = 15; // delta theta due to block
+	private static final int ON_COURSE_ANGLE = 0; // when travelling properly
+	
+	// Coordinates for Navigation
+	Coordinate c0 = new Coordinate(0, 0); // Start 0,0
+	Coordinate c1 = new Coordinate(0, 60);
+	Coordinate c2 = new Coordinate(60,0);
+	
+	
+	
+	
+	
+	
+	SensorModes usSensor = new EV3UltrasonicSensor(usPort);		// usSensor is the instance
+	SampleProvider usDistance = usSensor.getMode("Distance");	// usDistance provides samples from this instance
+	float[] usData = new float[usDistance.sampleSize()];	
+
+}

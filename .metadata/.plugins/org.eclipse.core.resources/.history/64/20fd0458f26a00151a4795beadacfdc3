@@ -102,9 +102,27 @@ public class Navigation extends Thread {
 		// Coordinate difference
 		double deltaX = x - this.currentX;
 		double deltaY = y - this.currentY;
+		//double deltaX = x;
+		//double deltaY = y;		
 		
 		double targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
 		double deltaTheta = targetTheta - this.currentTheta; 
+		
+		/*
+		 
+		double targetTheta = 0;
+		double deltaTheta = 0;
+		 
+		if (deltaX >= 0){
+			targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
+			deltaTheta = targetTheta - this.currentTheta; 
+		}
+		else if (deltaX < 0){
+			//targetTheta = (-180) - Math.toDegrees(Math.atan2(deltaY, deltaX));
+			targetTheta = 180;
+			deltaTheta = targetTheta - this.currentTheta; 
+		}
+		*/
 		
 		// if the heading is off by more than acceptable error, we must correct
 		if (Math.abs(deltaTheta) > errorThreshold) {

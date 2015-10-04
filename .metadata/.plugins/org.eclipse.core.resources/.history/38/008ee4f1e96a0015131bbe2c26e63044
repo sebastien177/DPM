@@ -1,0 +1,77 @@
+package ev3Navigation;
+/* Lab 3 Navigation
+ * Group 7
+ * Sebastien Arrese & Arnold Kokoroko
+ */
+import lejos.hardware.sensor.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.Button;
+
+public class ObstacleAvoidanceNavigation extends Thread {
+	
+	private static final Port usPort = LocalEV3.get().getPort("S1");
+	double currentX, currentY, targetX, targetY; // Current Position / Target Position
+	double currentTheta;
+
+	double obstacleTheta; // theta when robot first sees obstacle
+	Odometer odometer; 
+	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
+
+	private static int countDistances; // the number of times sensor reads 255
+	boolean isNearObstacle = false;
+
+	// Class constants
+	private static final long navigationPeriod= 25;
+	private static final double leftRadius = 2.1; // left wheel radius (cm)
+	private static final double rightRadius = 2.1; // right wheel radius (cm)
+	private static final double wheelDistance = 15.5; // wheel track (cm)
+	private static final double errorThreshold = 1; // degrees off heading
+	private static final int tooClose = 20;
+
+	
+	// Coordinates for Navigation
+	Coordinate c0 = new Coordinate(0, 0); 
+	Coordinate c1 = new Coordinate(0, 60);
+	Coordinate c2 = new Coordinate(60,0); 
+	
+	public ObstacleAvoidanceNavigation(Odometer odometer,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor){
+		this.odometer = odometer;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+	}
+	
+
+	public void run() {
+		long updateStart, updateEnd;
+		while (true) {
+				updateStart = System.currentTimeMillis();
+				this.currentX = odometer.getX();
+				this.currentY = odometer.getY();
+				this.currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
+				
+				if (currentTheta > 180) {
+					odometer.setTheta(currentTheta - 360);
+				} else if (currentTheta < -180) {
+					odometer.setTheta(currentTheta + 360);
+				}
+				
+			
+			
+			
+			
+			
+		}
+		
+	}
+	
+	
+	
+	
+	SensorModes usSensor = new EV3UltrasonicSensor(usPort);		// usSensor is the instance
+	SampleProvider usDistance = usSensor.getMode("Distance");	// usDistance provides samples from this instance
+	float[] usData = new float[usDistance.sampleSize()];	
+
+}
