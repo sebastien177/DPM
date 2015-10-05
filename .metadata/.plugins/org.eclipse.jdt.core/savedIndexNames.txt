@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 INDEX VERSION 1.126+/Users/SebastienA/Documents/DPMworkspace/.metadata/.plugins/org.eclipse.jdt.core
 2586066529.index
 3599391985.index
@@ -46,3 +47,35 @@ INDEX VERSION 1.126+/Users/SebastienA/Documents/DPMworkspace/.metadata/.plugins/
 2885545355.index
 3392682170.index
 2545238116.index
+=======
+INDEX VERSION 1.126+C:\Users\ArnoldK\Desktop\DPM\.metadata\.plugins\org.eclipse.jdt.core
+4089733677.index
+3046797473.index
+2380175872.index
+3276674381.index
+2440553179.index
+620757275.index
+706113170.index
+1848636240.index
+6335596.index
+3265110447.index
+612511169.index
+3109601978.index
+3961661809.index
+866640448.index
+2161896010.index
+1596824627.index
+393383716.index
+3698211598.index
+3855420317.index
+3971180653.index
+75572574.index
+3820156051.index
+1273198226.index
+1464124803.index
+2707258713.index
+3606674122.index
+172438950.index
+1316958313.index
+1502549586.index
+>>>>>>> ce0c5d9dfbd6ac19500ada0c03b6953350d13ac6

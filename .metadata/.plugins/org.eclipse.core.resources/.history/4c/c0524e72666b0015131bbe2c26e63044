@@ -131,7 +131,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.forward();
 			}
 			
-
+			if (usSensor.ge))
 		}	
 
 		public void turnTo(double theta) {

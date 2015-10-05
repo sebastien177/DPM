@@ -36,6 +36,11 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	private static final double errorThreshold = 1; // degrees off heading
 	private static final int objectLimit = 20;
 
+	/*
+	SensorModes usSensor = new EV3UltrasonicSensor(usPort);		// usSensor is the instance
+	SampleProvider usDistance = usSensor.getMode("Distance");	// usDistance provides samples from this instance
+	float[] usData = new float[usDistance.sampleSize()];	
+	*/
 	
 	// Coordinates for Navigation
 	Coordinate c0 = new Coordinate(0, 0); 
@@ -53,7 +58,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 		odometer.setDistance(distance);
 	}
 	
-
+/*
 	public void run() {
 		
 		long updateStart, updateEnd;
@@ -131,7 +136,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.forward();
 			}
 			
-
+			if (usSensor.ge))
 		}	
 
 		public void turnTo(double theta) {
@@ -178,7 +183,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	public boolean isNavigating() {
 		return false;
 	}
-	
+	*/
 	public int readUSDistance() {
 		return this.distance;
 	}
