@@ -12,18 +12,23 @@ import lejos.hardware.Button;
 
 public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicController {
 	
+	//private static final Port usPort = LocalEV3.get().getPort("S1");
+	
 	double currentX, currentY, targetX, targetY; // Current Position / Target Position
 	double currentTheta;
-	double obstacleTheta;
 	boolean obstaclePresent = false;
 	private static final int rotationSpeed = 180; 
-	private static final int fwdSpeed = 360;  
+	private static final int fwdSpeed = 360; 
+	private static final int turnSpeed = 240; 
 	private static final int offCourseSpeed = 80;
 	private static final int onCourseSpeed = 200;
 	private int distance;
+
+	double obstacleTheta; // theta when robot first sees obstacle
 	Odometer odometer; 
 	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
 
+	private static int countDistances; // the number of times sensor reads 255
 
 
 	// Class constants

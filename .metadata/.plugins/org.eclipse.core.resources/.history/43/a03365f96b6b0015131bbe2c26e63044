@@ -12,18 +12,21 @@ import lejos.hardware.Button;
 
 public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicController {
 	
+	//private static final Port usPort = LocalEV3.get().getPort("S1");
+	
 	double currentX, currentY, targetX, targetY; // Current Position / Target Position
 	double currentTheta;
-	double obstacleTheta;
 	boolean obstaclePresent = false;
 	private static final int rotationSpeed = 180; 
-	private static final int fwdSpeed = 360;  
-	private static final int offCourseSpeed = 80;
-	private static final int onCourseSpeed = 200;
+	private static final int fwdSpeed = 360; 
+	private static final int turnSpeed = 240; 
 	private int distance;
+
+	double obstacleTheta; // theta when robot first sees obstacle
 	Odometer odometer; 
 	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
 
+	private static int countDistances; // the number of times sensor reads 255
 
 
 	// Class constants
@@ -32,9 +35,6 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	private static final double wheelDistance = 15.5; // wheel track (cm)
 	private static final double errorThreshold = 1; // degrees off heading
 	private static final int objectLimit = 20;
-	private static final int offCourseAngle = 15;
-	private static final int onCourseAngle = 0;
-	
 
 	
 	// Coordinates for Navigation
@@ -107,8 +107,8 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	
 	
 	public void avoidObstacle(){
-		if (this.distance< objectLimit || odometer.getTheta() > obstacleTheta-50){
-			rightMotor.setSpeed(15);		
+		if (this.distance< objectLimit ){
+			rightMotor.setSpeed(20);		
 		}
 		
 		else if (this.distance >= 255){
@@ -147,13 +147,6 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.forward();
 			}
 			
-			if( this.distance < objectLimit){
-				this.obstaclePresent = true;
-				this.obstacleTheta = Math.toDegrees(odometer.getTheta());
-				
-			}
-			
-			
 
 		}	
 
@@ -175,19 +168,17 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
 			}
 
-			 else if (rotate > offCourseAngle) {
-					leftMotor.setSpeed(offCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < -offCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(offCourseSpeed);
-				} else if (rotate > onCourseAngle) {
-					leftMotor.setSpeed(onCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < onCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(onCourseSpeed);
-				}
+			//ADJUST BUT NOT ROTATE towards left
+			else if ( rotate > 0) {
+				leftMotor.setSpeed(turnSpeed);
+				rightMotor.setSpeed(fwdSpeed);
+			}
+			//ADJUST BUT NOT ROTATE towards right
+			else if ( rotate < 0) {
+				leftMotor.setSpeed(fwdSpeed);
+				rightMotor.setSpeed(turnSpeed);
+			}
+			
 				
 		}
 	

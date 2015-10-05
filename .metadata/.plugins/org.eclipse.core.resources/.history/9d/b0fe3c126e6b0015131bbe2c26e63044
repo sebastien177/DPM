@@ -12,18 +12,23 @@ import lejos.hardware.Button;
 
 public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicController {
 	
+	//private static final Port usPort = LocalEV3.get().getPort("S1");
+	
 	double currentX, currentY, targetX, targetY; // Current Position / Target Position
 	double currentTheta;
-	double obstacleTheta;
 	boolean obstaclePresent = false;
 	private static final int rotationSpeed = 180; 
-	private static final int fwdSpeed = 360;  
+	private static final int fwdSpeed = 360; 
+	private static final int turnSpeed = 240; 
 	private static final int offCourseSpeed = 80;
-	private static final int onCourseSpeed = 200;
+	private static final int onCourseSpeed = 180;
 	private int distance;
+
+	double obstacleTheta; // theta when robot first sees obstacle
 	Odometer odometer; 
 	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
 
+	private static int countDistances; // the number of times sensor reads 255
 
 
 	// Class constants
@@ -107,8 +112,8 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	
 	
 	public void avoidObstacle(){
-		if (this.distance< objectLimit || odometer.getTheta() > obstacleTheta-50){
-			rightMotor.setSpeed(15);		
+		if (this.distance< objectLimit ){
+			rightMotor.setSpeed(20);		
 		}
 		
 		else if (this.distance >= 255){
@@ -149,7 +154,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 			
 			if( this.distance < objectLimit){
 				this.obstaclePresent = true;
-				this.obstacleTheta = Math.toDegrees(odometer.getTheta());
+				this.obstacleTheta = odometer.getTheta();
 				
 			}
 			
@@ -175,18 +180,18 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
 			}
 
-			 else if (rotate > offCourseAngle) {
-					leftMotor.setSpeed(offCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < -offCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(offCourseSpeed);
-				} else if (rotate > onCourseAngle) {
-					leftMotor.setSpeed(onCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < onCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(onCourseSpeed);
+			 else if (rotate > OFF_COURSE_ANGLE) {
+					leftMotor.setSpeed(OFF_COURSE_SPEED); // turn left
+					rightMotor.setSpeed(FORWARD_SPEED);
+				} else if (rotate < -OFF_COURSE_ANGLE) {
+					leftMotor.setSpeed(FORWARD_SPEED);
+					rightMotor.setSpeed(OFF_COURSE_SPEED); // turn right
+				} else if (rotate > ON_COURSE_ANGLE) {
+					leftMotor.setSpeed(ON_COURSE_SPEED); // correct left
+					rightMotor.setSpeed(FORWARD_SPEED);
+				} else if (rotate < ON_COURSE_ANGLE) {
+					leftMotor.setSpeed(FORWARD_SPEED);
+					rightMotor.setSpeed(ON_COURSE_SPEED); // correct right
 				}
 				
 		}
