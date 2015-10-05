@@ -87,6 +87,7 @@ public class Lab3 {
 			odometryDisplay.start();
 			usPoller = new UltrasonicPoller(usDistance, usData, navigationObstacle);
 			//navigationObstacle.start();
+			//t.drawString("US Distance: " + cont.readUSDistance(), 0, 2 );	// print last US reading
 			usPoller.start();
 		}
 		

@@ -10,6 +10,7 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 public class Odometer extends Thread {
 	//Robot position
 	private double x, y, theta;
+	private int distance;
 
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
@@ -110,6 +111,8 @@ public class Odometer extends Thread {
 				position[1] = y;
 			if (update[2])
 				position[2] = Math.toDegrees(theta);
+			if (update[3])
+				position[3]= distance ;
 		}
 	}
 
@@ -143,19 +146,6 @@ public class Odometer extends Thread {
 		return result;
 	}
 
-	// mutators
-	public void setPosition(double[] position, boolean[] update) {
-		// ensure that the values don't change while the odometer is running
-		synchronized (lock) {
-			if (update[0])
-				x = position[0];
-			if (update[1])
-				y = position[1];
-			if (update[2])
-				theta = position[2];
-		}
-	}
-
 	public void setX(double x) {
 		synchronized (lock) {
 			this.x = x;
@@ -171,6 +161,12 @@ public class Odometer extends Thread {
 	public void setTheta(double theta) {
 		synchronized (lock) {
 			this.theta = theta;
+		}
+	}
+	
+	public void setDistance(int distance) {
+		synchronized (lock) {
+			this.distance = distance;
 		}
 	}
 }

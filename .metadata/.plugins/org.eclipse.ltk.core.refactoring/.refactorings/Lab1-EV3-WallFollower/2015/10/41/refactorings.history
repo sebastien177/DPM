@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy 2 elements to &apos;Lab3-EV3-Navigation/src/ev3Navigation&apos;&#x0D;&#x0A;- Original project: &apos;Lab1-EV3-WallFollower&apos;&#x0D;&#x0A;- Destination element: &apos;Lab3-EV3-Navigation/src/ev3Navigation&apos;&#x0D;&#x0A;- Original elements:&#x0D;&#x0A;     wallFollower.UltrasonicController.java&#x0D;&#x0A;     wallFollower.UltrasonicPoller.java" description="Copy compilation units" destination="=Lab3-EV3-Navigation/src&lt;ev3Navigation" element1="/src&lt;wallFollower{UltrasonicController.java" element2="/src&lt;wallFollower{UltrasonicPoller.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1444003074953" units="2" version="1.0"/>
+</session>

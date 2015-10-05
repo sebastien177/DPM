@@ -20,7 +20,7 @@ public class OdometryDisplay extends Thread {
 	// run method (required for Thread)
 	public void run() {
 		long displayStart, displayEnd;
-		double[] position = new double[3];
+		double[] position = new double[4];
 
 		// clear the display once
 		t.clear();
@@ -32,13 +32,14 @@ public class OdometryDisplay extends Thread {
 			t.drawString("X:              ", 0, 0);
 			t.drawString("Y:              ", 0, 1);
 			t.drawString("T:              ", 0, 2);
+			t.drawString("Dst:            ", 0, 3);
 
 			// get the odometry information
-			odometer.getPosition(position, new boolean[] { true, true, true });
+			odometer.getPosition(position, new boolean[] { true, true, true, true });
 
 			// display odometry information
-			for (int i = 0; i < 3; i++) {
-				t.drawString(formattedDoubleToString(position[i], 2), 3, i);
+			for (int i = 0; i < 4; i++) {
+				t.drawString(formattedDoubleToString(position[i], 2), 4, i);
 			}
 
 			// throttle the OdometryDisplay

@@ -53,7 +53,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 		odometer.setDistance(distance);
 	}
 	
-
+/*
 	public void run() {
 		
 		long updateStart, updateEnd;
@@ -178,7 +178,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	public boolean isNavigating() {
 		return false;
 	}
-	
+	*/
 	public int readUSDistance() {
 		return this.distance;
 	}
