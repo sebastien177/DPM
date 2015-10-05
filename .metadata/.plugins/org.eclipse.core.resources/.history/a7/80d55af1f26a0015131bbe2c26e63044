@@ -2,11 +2,6 @@ package ev3Navigation;
 /* Lab 3 Navigation
  * Group 7
  * Sebastien Arrese & Arnold Kokoroko
- * 
- * Coordinate Class
- * The purpose of this class is to keep track of the target Coordinates.
- * New object gets created when new coordinate is set.
- * Each have a X Y value representing their position.
  */
 
 public class Coordinate {
@@ -42,7 +37,7 @@ public class Coordinate {
 			return isVisited;
 		}
 
-		//Boolean value gets set
+		// Setter method to set visited
 		public void setIsVisited(double x, double y) {
 			this.isVisited = (Math.abs(x - getX()) < errorMargin)
 					&& (Math.abs(y - getY()) < errorMargin);

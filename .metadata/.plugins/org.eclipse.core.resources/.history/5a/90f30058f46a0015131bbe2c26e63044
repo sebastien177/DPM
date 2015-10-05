@@ -19,19 +19,19 @@ public class Navigation extends Thread {
 	private static final double wheelRadius = 2.145;
 	private static final double wheelDistance = 15.25;
 	private static final double errorThreshold = 5; 
+
 	private static final int rotationSpeed = 180; 
-	private static final int fwdSpeed = 350; 
-	private static final int turnSpeed = 250; 
+	private static final int fwdSpeed = 360; 
+	private static final int turnSpeed = 240; 
 
 
-	// Coordinates Objects instantiation 
+	// Coordinates for Navigation
 	Coordinate c0 = new Coordinate(0, 0); // Start 0,0
 	Coordinate c1 = new Coordinate(60, 30);
 	Coordinate c2 = new Coordinate(30, 30);
 	Coordinate c3 = new Coordinate(30, 60);
 	Coordinate c4 = new Coordinate(60, 0); // End 0,0
 	
-	//Constructor 
 	public Navigation(Odometer odometer,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
 		this.odometer = odometer;
 		this.leftMotor = leftMotor;
@@ -43,7 +43,6 @@ public class Navigation extends Thread {
 		
 		while (true) {
 			updateStart = System.currentTimeMillis();
-			//Get odometer values X Y and theta
 			this.currentX = odometer.getX();
 			this.currentY = odometer.getY();
 			this.currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
@@ -54,9 +53,8 @@ public class Navigation extends Thread {
 				odometer.setTheta(currentTheta + 360);
 			}
 			
-			//Different coordinate Scenarios + Setting Target points
+
 			if (c4.getIsVisited()) {
-				//End of navigation, motors stop
 				leftMotor.stop();
 				rightMotor.stop();
 				break;
@@ -73,13 +71,11 @@ public class Navigation extends Thread {
 				c2.setIsVisited(currentX, currentY);
 			} 
 			else {
-				//Initial scenario when at 0,0. Target becomes coordinate 1
 				setCoordinate(c1);
 				c1.setIsVisited(currentX, currentY);
 			}
 			
-			// Once Target points are set, travel to them
-			travelTo(this.targetX, this.targetY); 
+			travelTo(this.targetX, this.targetY); // travel to the target set just above
 
 			updateEnd = System.currentTimeMillis();
 			if (updateEnd - updateStart < navigationPeriod) {
@@ -88,29 +84,33 @@ public class Navigation extends Thread {
 				} catch (InterruptedException e) {
 
 				}
-			}		
+			}
+		
+			
+			
 		}
 	}
-	//Target Setter Method
+	
 	public void setCoordinate (Coordinate c){
 		this.targetX = c.getX();
 		this.targetY = c.getY();
 	}
 	
-	// Travel to Specific Target Point
+	// Travel to absolute field location
 	public void travelTo(double x, double y) {
 
 		// Coordinate difference
 		double deltaX = x - this.currentX;
 		double deltaY = y - this.currentY;
+		
 		double targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
 		double deltaTheta = targetTheta - this.currentTheta; 
 		
-		// If Angle difference is bigger than threshold, correct by Turning
+		// if the heading is off by more than acceptable error, we must correct
 		if (Math.abs(deltaTheta) > errorThreshold) {
 			turnTo(targetTheta);
 		} else {
-		//If not, continue trajectory forward
+	
 			leftMotor.setSpeed(fwdSpeed);
 			rightMotor.setSpeed(fwdSpeed);
 			leftMotor.forward();
@@ -118,18 +118,19 @@ public class Navigation extends Thread {
 		}
 	}	
 
-	// Turning method, adjusting itself
 	public void turnTo(double theta) {
 		double rotate = theta - this.currentTheta;	
-		//Rotation occurs when robot is at a coordinate point
+		//Meaning Complete rotation
 		if (c0.isAtPoint(currentX, currentY) || c1.isAtPoint(currentX, currentY) || c2.isAtPoint(currentX, currentY) || c3.isAtPoint(currentX, currentY) || c4.isAtPoint(currentX, currentY)){
 			if (rotate> 180){
 				rotate -= 360;
 			} else if (rotate < -180){
 				rotate += 360;
 			}
+			
 			leftMotor.setSpeed(rotationSpeed);
-			rightMotor.setSpeed(rotationSpeed);	
+			rightMotor.setSpeed(rotationSpeed);
+			
 			//Rotation starts
 			leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), true);
 			rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
