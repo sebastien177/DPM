@@ -1,0 +1,289 @@
+package ev3Navigation;
+/* Lab 3 Navigation
+ * Group 7
+ * Sebastien Arrese & Arnold Kokoroko
+ */
+import lejos.hardware.sensor.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.Button;
+
+public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicController {
+
+	private Object lock = new Object();;
+	double currentX, currentY, targetX, targetY; // Current Position / Target Position
+	double currentTheta;
+	double obstacleTheta;
+	boolean obstaclePresent = false;
+	private static final int rotationSpeed = 180; 
+	private static final int fwdSpeed = 360;  
+	private static final int offCourseSpeed = 80;
+	private static final int onCourseSpeed = 200;
+	private static final int turnSpeed = 250; 
+	private static final int motorLow = 100;			// Speed of slower rotating wheel (deg/sec)
+	private static final int motorMedium = 180;			// Speed of slower rotating wheel (deg/sec)
+	private static final int motorHigh = 280;			// Speed of the faster rotating wheel (deg/seec)
+	private int distance;
+	private final int bandCenter=35; 
+	private final int bandwidth=5;
+	Odometer odometer; 
+	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
+
+	// Class constants
+	private static final long navigationPeriod= 25;
+	private static final double wheelRadius = 2.1; // right wheel radius (cm)
+	private static final double wheelDistance = 15.5; // wheel track (cm)
+	private static final double errorThreshold = 1; // degrees off heading
+	private static final int objectLimit = 30;
+	private static final int offCourseAngle = 15;
+	private static final int onCourseAngle = 0;
+
+
+
+	// Coordinates for Navigation
+	Coordinate c0 = new Coordinate(0, 0); 
+	Coordinate c1 = new Coordinate(0, 60);
+	Coordinate c2 = new Coordinate(60,0); 
+
+	public ObstacleAvoidanceNavigation(Odometer odometer,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor){
+		this.odometer = odometer;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+	}
+
+	public void processUSData(int distance) {
+		this.distance = distance;
+		odometer.setDistance(distance);
+	}
+
+
+	public void run() {
+
+		long updateStart, updateEnd;
+		while (true) {
+			updateStart = System.currentTimeMillis();
+			this.currentX = odometer.getX();
+			this.currentY = odometer.getY();
+			this.currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
+
+			if (currentTheta > 180) {
+				odometer.setTheta(currentTheta - 360);
+			} else if (currentTheta < -180) {
+				odometer.setTheta(currentTheta + 360);
+			}
+
+
+			if (c2.getIsVisited()) {
+				leftMotor.stop();
+				rightMotor.stop();
+				break;
+			} else if (c1.getIsVisited()) {
+				setCoordinate(c2);
+				c2.setIsVisited(currentX, currentY);
+			} 
+			else {
+				setCoordinate(c1);
+				c1.setIsVisited(currentX, currentY);
+			} 
+
+			//Normal Navigation when no Object
+			/*if (distance<30){
+				//Obstacle Avoidance
+				while(this.distance<30){
+					//avoidObstacle( targetX, targetY);
+					avoidObstacle2();
+				}
+			}*/
+			travelTo(targetX, targetY);
+			
+			updateEnd = System.currentTimeMillis();
+			if (updateEnd - updateStart < navigationPeriod) {
+				try {
+					Thread.sleep(navigationPeriod - (updateEnd - updateStart));
+				} catch (InterruptedException e) {
+					// there is nothing to be done here because it is not
+					// expected that the odometer will be interrupted by
+					// another thread
+				}
+			}
+
+		}
+
+	}
+
+
+	public void avoidObstacle(double x, double y){
+		int distError =  this.distance - this.bandCenter;	
+
+		//If the robot is too close to the wall 3 scenarios happen
+		if (distError < 0){
+			//If its almost touching the wall, robot goes backward
+			if (distError <= -25){
+				this.leftMotor.setSpeed(this.motorMedium);
+				this.rightMotor.setSpeed(this.motorMedium);
+				this.leftMotor.backward();
+				this.rightMotor.backward();	
+
+				this.obstaclePresent = false;
+				travelTo(x, y);
+			}
+
+			// Once the robot goes backward straight, it turns at an angle to replace itself
+			else if (distError <= -15 && distError > -25){
+				this.leftMotor.setSpeed(this.motorHigh);
+				this.rightMotor.setSpeed(this.motorHigh);
+				this.leftMotor.forward();
+				this.rightMotor.backward();	
+
+				this.obstaclePresent = false;
+				travelTo(x, y);
+			}
+			//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
+			else{
+				this.leftMotor.setSpeed(this.motorHigh);
+				this.rightMotor.setSpeed(this.motorLow);
+				this.leftMotor.forward();
+				this.rightMotor.forward();
+				this.obstaclePresent = false;
+				travelTo(x, y);
+			}					
+			//error is recalculated for future reference
+			distError = this.distance - this.bandCenter;
+			this.obstaclePresent = false;
+			travelTo(x, y);
+		}
+		else if (this.distance > objectLimit){
+			this.obstaclePresent = false;
+			travelTo(x, y);
+		}
+
+	}
+
+	public void avoidObstacle2(){
+		synchronized (lock) {
+		while (distance < 30){
+			int distError =  this.distance - this.bandCenter;	
+
+			//If the robot is too close to the wall 3 scenarios happen
+			if (distError < 0){
+				//If its almost touching the wall, robot goes backward
+				if (distError <= -25){
+					this.leftMotor.setSpeed(this.motorMedium);
+					this.rightMotor.setSpeed(this.motorMedium);
+					this.leftMotor.backward();
+					this.rightMotor.backward();	
+				}
+
+				// Once the robot goes backward straight, it turns at an angle to replace itself
+				else if (distError <= -15 && distError > -25){
+					this.leftMotor.setSpeed(this.motorHigh);
+					this.rightMotor.setSpeed(this.motorHigh);
+					this.leftMotor.forward();
+					this.rightMotor.backward();	
+
+				}
+				//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
+				else{
+					this.leftMotor.setSpeed(this.motorHigh);
+					this.rightMotor.setSpeed(this.motorLow);
+					this.leftMotor.forward();
+					this.rightMotor.forward();
+					this.obstaclePresent = false;
+				}					
+				//error is recalculated for future reference
+				distError = this.distance - this.bandCenter;
+			}
+		}
+		return;
+		}
+	}
+
+
+	public void setCoordinate (Coordinate c){
+		this.targetX = c.getX();
+		this.targetY = c.getY();
+	}
+
+	// Travel to absolute field location
+	public void travelTo(double x, double y) {
+		synchronized (lock) {
+			
+		
+
+		// Coordinate difference
+		double deltaX = x - this.currentX;
+		double deltaY = y - this.currentY;
+		double targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
+		double deltaTheta = targetTheta - this.currentTheta; 
+
+		// if the heading is off by more than acceptable error, we must correct
+		if (Math.abs(deltaTheta) > errorThreshold) {
+			turnTo(targetTheta);
+		} else {
+
+			leftMotor.setSpeed(fwdSpeed);
+			rightMotor.setSpeed(fwdSpeed);
+			leftMotor.forward();
+			rightMotor.forward();
+		}
+
+		if( this.distance < objectLimit){
+			avoidObstacle2();
+
+		}
+		}
+
+
+
+	}	
+
+	public void turnTo(double theta) {
+		double rotate = theta - this.currentTheta;	
+		//Meaning Complete rotation
+		if (c0.isAtPoint(currentX, currentY) || c1.isAtPoint(currentX, currentY) || c2.isAtPoint(currentX, currentY)){
+			if (rotate> 180){
+				rotate -= 360;
+			} else if (rotate < -180){
+				rotate += 360;
+			}
+			leftMotor.setSpeed(rotationSpeed);
+			rightMotor.setSpeed(rotationSpeed);	
+			//Rotation starts
+			leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), true);
+			rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
+		}
+
+		//ADJUST BUT NOT ROTATE towards left
+		else if ( rotate > 0) {
+			leftMotor.setSpeed(turnSpeed);
+			rightMotor.setSpeed(fwdSpeed);
+		}
+		//ADJUST BUT NOT ROTATE towards right
+		else if ( rotate < 0) {
+			leftMotor.setSpeed(fwdSpeed);
+			rightMotor.setSpeed(turnSpeed);
+		}
+
+
+	}
+
+
+	private static int convertDistance(double radius, double distance) {
+		return (int) ((180.0 * distance) / (Math.PI * radius));
+	}
+
+	private static int convertAngle(double radius, double width, double angle) {
+		return convertDistance(radius, Math.PI * width * angle / 360.0);
+	}
+
+	public boolean isNavigating() {
+		return false;
+	}
+
+	public int readUSDistance() {
+		return this.distance;
+	}
+
+}

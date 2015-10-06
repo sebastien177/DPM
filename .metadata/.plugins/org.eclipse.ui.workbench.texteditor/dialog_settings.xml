@@ -2,20 +2,20 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="getPosition" key="selection"/>
+		<item value="navigationPeriod" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
-			<item value="getPosition"/>
-			<item value="start"/>
-			<item value="UltrasonicController"/>
-			<item value="processUSData"/>
-			<item value="distance"/>
-			<item value="travelTo"/>
-			<item value="travel"/>
-			<item value="deltaX"/>
+			<item value="navigationPeriod"/>
+			<item value="process"/>
+			<item value="USDis"/>
+			<item value="US"/>
+			<item value="avoidObstacle2"/>
+			<item value="&quot;D&quot;"/>
+			<item value="synch"/>
+			<item value="synchronise"/>
 		</list>
 		<list key="replacehistory">
 		</list>
