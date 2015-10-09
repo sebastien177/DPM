@@ -20,7 +20,13 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	private static final int fwdSpeed = 360;  
 	private static final int offCourseSpeed = 80;
 	private static final int onCourseSpeed = 200;
+	private static final int turnSpeed = 250; 
+	private static final int motorLow = 100;			// Speed of slower rotating wheel (deg/sec)
+	private static final int motorMedium = 180;			// Speed of slower rotating wheel (deg/sec)
+	private static final int motorHigh = 280;			// Speed of the faster rotating wheel (deg/seec)
 	private int distance;
+	private final int bandCenter=35; 
+	private final int bandwidth=5;
 	Odometer odometer; 
 	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
 
@@ -84,7 +90,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				} 
 				
 				//Normal Navigation when no Object
-				if (obstaclePresent == false) {
+				if (this.distance > objectLimit) {
 					travelTo(targetX, targetY);
 				} else {
 				//Obstacle Avoidance
@@ -107,17 +113,66 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	
 	
 	public void avoidObstacle(){
-		if (this.distance< objectLimit || odometer.getTheta() > obstacleTheta-50){
-			rightMotor.setSpeed(15);		
+		int distError =  this.distance - this.bandCenter;	
+		//If there is no error, we let the robot go straight ahead
+		if(Math.abs(distError)<= this.bandwidth){
+			this.leftMotor.setSpeed(this.motorMedium);
+			this.rightMotor.setSpeed(this.motorMedium);
+			this.leftMotor.forward();
+			this.rightMotor.forward();
+			//error is recalculated for future reference
+			distError = this.distance - this.bandCenter;		
 		}
 		
-		else if (this.distance >= 255){
-			leftMotor.setSpeed(fwdSpeed);
-			rightMotor.setSpeed(fwdSpeed);
+		//If the robot is too far from the wall
+		else if (distError > 0 && distError <= 100){
+			//If too far, robot will have to move to the left, right wheel moving faster
+			this.leftMotor.setSpeed(this.motorLow);
+			this.rightMotor.setSpeed(this.motorHigh-20);
+			this.leftMotor.forward();
+			this.rightMotor.forward();
+			//error is recalculated for future reference
+			distError = this.distance - this.bandCenter;
+			
 		}
-		else{
-			this.obstaclePresent = false;
+		
+		else if ( distError > 100){
+			this.leftMotor.setSpeed(this.motorLow);
+			this.rightMotor.setSpeed(this.motorLow + 50);
+			this.leftMotor.forward();
+			this.rightMotor.forward();
+			//error is recalculated for future reference
+			distError = this.distance - this.bandCenter;	
 		}
+		
+		//If the robot is too close to the wall 3 scenarios happen
+		else if (distError < 0){
+			//If its almost touching the wall, robot goes backward
+			if (distError <= -25){
+				this.leftMotor.setSpeed(this.motorMedium);
+				this.rightMotor.setSpeed(this.motorMedium);
+				this.leftMotor.backward();
+				this.rightMotor.backward();				
+			}
+			
+			// Once the robot goes backward straight, it turns at an angle to replace itself
+			else if (distError <= -15 && distError > -25){
+				this.leftMotor.setSpeed(this.motorHigh);
+				this.rightMotor.setSpeed(this.motorHigh);
+				this.leftMotor.forward();
+				this.rightMotor.backward();				
+			}
+			//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
+			else{
+			this.leftMotor.setSpeed(this.motorHigh);
+			this.rightMotor.setSpeed(this.motorLow);
+			this.leftMotor.forward();
+			this.rightMotor.forward();
+			}					
+			//error is recalculated for future reference
+			distError = this.distance - this.bandCenter;
+		}
+
 		
 	}
 	
@@ -147,13 +202,6 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				rightMotor.forward();
 			}
 			
-			if( this.distance < objectLimit){
-				this.obstaclePresent = true;
-				this.obstacleTheta = Math.toDegrees(odometer.getTheta());
-				
-			}
-			
-			
 
 		}	
 
@@ -166,28 +214,24 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				} else if (rotate < -180){
 					rotate += 360;
 				}
-				
 				leftMotor.setSpeed(rotationSpeed);
-				rightMotor.setSpeed(rotationSpeed);
-				
+				rightMotor.setSpeed(rotationSpeed);	
 				//Rotation starts
 				leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), true);
 				rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
 			}
 
-			 else if (rotate > offCourseAngle) {
-					leftMotor.setSpeed(offCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < -offCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(offCourseSpeed);
-				} else if (rotate > onCourseAngle) {
-					leftMotor.setSpeed(onCourseSpeed); 
-					rightMotor.setSpeed(fwdSpeed);
-				} else if (rotate < onCourseAngle) {
-					leftMotor.setSpeed(fwdSpeed);
-					rightMotor.setSpeed(onCourseSpeed);
-				}
+			//ADJUST BUT NOT ROTATE towards left
+			else if ( rotate > 0) {
+				leftMotor.setSpeed(turnSpeed);
+				rightMotor.setSpeed(fwdSpeed);
+			}
+			//ADJUST BUT NOT ROTATE towards right
+			else if ( rotate < 0) {
+				leftMotor.setSpeed(fwdSpeed);
+				rightMotor.setSpeed(turnSpeed);
+			}
+			
 				
 		}
 	

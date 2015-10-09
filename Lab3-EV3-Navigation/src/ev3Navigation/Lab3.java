@@ -86,7 +86,7 @@ public class Lab3 {
 			odometer.start();
 			odometryDisplay.start();
 			usPoller = new UltrasonicPoller(usDistance, usData, navigationObstacle);
-			//navigationObstacle.start();
+			navigationObstacle.start();
 			usPoller.start();
 		}
 		
