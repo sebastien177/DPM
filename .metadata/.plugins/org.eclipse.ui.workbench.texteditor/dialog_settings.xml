@@ -10,11 +10,16 @@
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="true" key="wrap"/>
 		<item value="false" key="isRegEx"/>
+<<<<<<< HEAD
+=======
+		<item value="navigationPeriod" key="selection"/>
+>>>>>>> 3770b2a6f8431ab15dfd21d41a2df8dff1a45951
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="false" key="wholeword"/>
 		<item value="" key="selection"/>
 		<list key="findhistory">
+<<<<<<< HEAD
 			<item value="bangbang"/>
 			<item value="navigationPerio"/>
 			<item value="current"/>
@@ -23,6 +28,16 @@
 			<item value="travelTo"/>
 			<item value="c0"/>
 			<item value="thet"/>
+=======
+			<item value="navigationPeriod"/>
+			<item value="process"/>
+			<item value="USDis"/>
+			<item value="US"/>
+			<item value="avoidObstacle2"/>
+			<item value="&quot;D&quot;"/>
+			<item value="synch"/>
+			<item value="synchronise"/>
+>>>>>>> 3770b2a6f8431ab15dfd21d41a2df8dff1a45951
 		</list>
 		<list key="replacehistory">
 		</list>
