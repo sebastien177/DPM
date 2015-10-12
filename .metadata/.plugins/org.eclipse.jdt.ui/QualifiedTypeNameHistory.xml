@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="java.lang.Math"/>
+<<<<<<< HEAD
 <fullyQualifiedTypeName name="ev3Navigation.ObstacleAvoidanceNavigation"/>
 <fullyQualifiedTypeName name="ev3Navigation.UltrasonicController"/>
 <fullyQualifiedTypeName name="java.lang.Thread"/>
 <fullyQualifiedTypeName name="LightLocalizer"/>
 <fullyQualifiedTypeName name="Odometer"/>
+=======
+<fullyQualifiedTypeName name="java.lang.System"/>
+>>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
 </qualifiedTypeNameHistroy>
