@@ -3,4 +3,7 @@
 <fullyQualifiedTypeName name="java.lang.Math"/>
 <fullyQualifiedTypeName name="ev3Navigation.ObstacleAvoidanceNavigation"/>
 <fullyQualifiedTypeName name="ev3Navigation.UltrasonicController"/>
+<fullyQualifiedTypeName name="java.lang.Thread"/>
+<fullyQualifiedTypeName name="LightLocalizer"/>
+<fullyQualifiedTypeName name="Odometer"/>
 </qualifiedTypeNameHistroy>

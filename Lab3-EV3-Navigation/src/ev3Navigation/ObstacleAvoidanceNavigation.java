@@ -10,6 +10,7 @@ import lejos.hardware.port.Port;
 import lejos.robotics.SampleProvider;
 import lejos.hardware.Button;
 
+//Made with our own code, the teacher's slide, the code from the first labs and the help of Jonna (TA)
 public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicController {
 
 	private Object lock = new Object();;
@@ -19,15 +20,12 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	boolean obstaclePresent = false;
 	private static final int rotationSpeed = 180; 
 	private static final int fwdSpeed = 360;  
-	//private static final int offCourseSpeed = 80;
-	//private static final int onCourseSpeed = 200;
-	//private static final int turnSpeed = 250; 
 	private static final int motorLow = 100;			// Speed of slower rotating wheel (deg/sec)
 	private static final int motorMedium = 180;			// Speed of slower rotating wheel (deg/sec)
 	private static final int motorHigh = 280;			// Speed of the faster rotating wheel (deg/seec)
-	private int distance;
+	private int distance = 250;
 	private final int bandCenter=30; 
-	private final int bandwidth=5;
+	private boolean bangbang=true;
 	Odometer odometer; 
 	private static EV3LargeRegulatedMotor leftMotor, rightMotor;
 
@@ -37,15 +35,12 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 	private static final double wheelDistance = 15.5; // wheel track (cm)
 	private static final double errorThreshold = 1; // degrees off heading
 	private static final int objectLimit = 30;
-	//private static final int offCourseAngle = 15;
-	//private static final int onCourseAngle = 0;
-
 
 
 	// Coordinates for Navigation
 	Coordinate c0 = new Coordinate(0, 0); 
 	Coordinate c1 = new Coordinate(0, 60);
-	Coordinate c2 = new Coordinate(60,0); 
+	Coordinate c2 = new Coordinate(60,0);
 
 	public ObstacleAvoidanceNavigation(Odometer odometer,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor){
 		this.odometer = odometer;
@@ -69,9 +64,9 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				this.currentY = odometer.getY();
 				this.currentTheta = Math.toDegrees(odometer.getTheta()); //Converting Radians to Pi
 
-				if (currentTheta > 180) {
+				if (currentTheta > 360) {
 					odometer.setTheta(currentTheta - 360);
-				} else if (currentTheta < -180) {
+				} else if (currentTheta < -360) {
 					odometer.setTheta(currentTheta + 360);
 				}
 
@@ -90,13 +85,7 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				} 
 
 				//Normal Navigation when no Object
-				/*if (distance<30){
-				//Obstacle Avoidance
-				while(this.distance<30){
-					//avoidObstacle( targetX, targetY);
-					avoidObstacle2();
-				}
-			}*/
+
 				travelTo(targetX, targetY);
 
 				updateEnd = System.currentTimeMillis();
@@ -113,59 +102,10 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 			}
 	}
 
-/*
-	public void avoidObstacle(double x, double y){
-		int distError =  this.distance - this.bandCenter;	
-
-		//If the robot is too close to the wall 3 scenarios happen
-		if (distError < 0){
-			//If its almost touching the wall, robot goes backward
-			if (distError <= -25){
-				this.leftMotor.setSpeed(this.motorMedium);
-				this.rightMotor.setSpeed(this.motorMedium);
-				this.leftMotor.backward();
-				this.rightMotor.backward();	
-
-				this.obstaclePresent = false;
-				travelTo(x, y);
-			}
-
-			// Once the robot goes backward straight, it turns at an angle to replace itself
-			else if (distError <= -15 && distError > -25){
-				this.leftMotor.setSpeed(this.motorHigh);
-				this.rightMotor.setSpeed(this.motorHigh);
-				this.leftMotor.forward();
-				this.rightMotor.backward();	
-
-				this.obstaclePresent = false;
-				travelTo(x, y);
-			}
-			//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
-			else{
-				this.leftMotor.setSpeed(this.motorHigh);
-				this.rightMotor.setSpeed(this.motorLow);
-				this.leftMotor.forward();
-				this.rightMotor.forward();
-				this.obstaclePresent = false;
-				travelTo(x, y);
-			}					
-			//error is recalculated for future reference
-			distError = this.distance - this.bandCenter;
-			this.obstaclePresent = false;
-			travelTo(x, y);
-		}
-		else if (this.distance > objectLimit){
-			this.obstaclePresent = false;
-			travelTo(x, y);
-		}
-
-	}
-
-	*/
-	
-	public void avoidObstacle2(double x, double y){
+	//Code taken from bangbang firstlab, makes the robot go around the obstacle
+	public void avoidObstacle2(double x1, double y1){
 		synchronized (lock) {
-			while (distance < 60){
+			while (distance < 30){
 				int distError =  this.distance - this.bandCenter;	
 
 				//If the robot is too close to the wall 3 scenarios happen
@@ -178,21 +118,22 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 						this.rightMotor.backward();	
 					}
 
-					// Once the robot goes backward straight, it turns at an angle to replace itself
-					else if (distError <= -15 && distError > -25){
+					// If not too close, turn left at high speed
+					else if (distError <= -5 && distError > -25){
 						this.leftMotor.setSpeed(this.motorLow);
 						this.rightMotor.setSpeed(this.motorHigh);
 						this.leftMotor.forward();
-						this.rightMotor.forward();	
-
+						this.rightMotor.forward();
 					}
+					
+					//turn left slightly
 					else if (distError <= 0){
 						this.leftMotor.setSpeed(this.motorMedium);
-						this.rightMotor.setSpeed(this.motorMedium);
+						this.rightMotor.setSpeed(this.motorHigh);
 						this.leftMotor.forward();
 						this.rightMotor.forward();	
 					}
-					//If close, but not super close, robot will have to move right away from the wall, left wheel moving faster
+					//else just go straight, we know there is a wall, but we're pretty far
 					else{
 						this.leftMotor.setSpeed(this.motorHigh);
 						this.rightMotor.setSpeed(this.motorMedium);
@@ -205,38 +146,73 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 				}
 			
 		}
-			/*
-		this.leftMotor.setSpeed(this.motorMedium);
-		this.rightMotor.setSpeed(this.motorLow);
-		this.leftMotor.forward();
-		this.rightMotor.forward();
-		*/
-		boolean test = true;
-		while (test){
-			/*
-			try {
-				   Thread.sleep(3000);
-				}
-				catch (InterruptedException e) {
-				}
-				*/
-			this.leftMotor.setSpeed(this.motorMedium);
-			this.rightMotor.setSpeed(this.motorMedium);
+
+			
+			/* If the code ahead (taken from bangbang 1st lab) wasn't executed yet,
+			 * execute the following code which make the robot turn right 2 times
+			 * and advance approx 10 cm
+			 */
+		if (bangbang){
+			leftMotor.setSpeed(rotationSpeed);
+			rightMotor.setSpeed(rotationSpeed);	
+			
+			leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, -30), true);
+			rightMotor.rotate(convertAngle(wheelRadius, wheelDistance, 30), false);
+			
+			this.leftMotor.setSpeed(this.motorHigh);
+			this.rightMotor.setSpeed(this.motorHigh);
 			this.leftMotor.forward();
 			this.rightMotor.forward();
 			
 			try {
-				   Thread.sleep(3000);
+				   Thread.sleep(4000);
 				}
 				catch (InterruptedException e) {
 				}
-			
-			test=false;
 		}
+		
+		leftMotor.setSpeed(rotationSpeed);
+		rightMotor.setSpeed(rotationSpeed);	
+		
+		leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, 75), true);
+		rightMotor.rotate(convertAngle(wheelRadius, wheelDistance, -75), false);
+		
+		this.leftMotor.setSpeed(this.motorHigh);
+		this.rightMotor.setSpeed(this.motorHigh);
+		this.leftMotor.forward();
+		this.rightMotor.forward();
+		
+		try {
+			   Thread.sleep(3500);
+			}
+			catch (InterruptedException e) {
+			}
+		
+		leftMotor.setSpeed(rotationSpeed);
+		rightMotor.setSpeed(rotationSpeed);	
+		leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, 60), true);
+		rightMotor.rotate(convertAngle(wheelRadius, wheelDistance,-60), false);
+		
+		this.leftMotor.setSpeed(this.motorHigh);
+		this.rightMotor.setSpeed(this.motorHigh);
+		this.leftMotor.forward();
+		this.rightMotor.forward();
+		
+		try {
+			   Thread.sleep(3000);
+			}
+			catch (InterruptedException e) {
+			}
+		
 		leftMotor.stop();
 		rightMotor.stop();
 		}
-
+		
+		//If we encounter a new obstacle, perform a normal bangbang
+		this.bangbang=false;
+		
+		//Now travel to our destination (obstacle is gone)
+		travelTo(x1,y1);
 	}
 
 
@@ -254,9 +230,8 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 			double targetTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
 			double deltaTheta = targetTheta - this.currentTheta; 
 
-			if( this.distance < objectLimit){
+			if( (this.distance < objectLimit) && bangbang ){
 				avoidObstacle2(x,y);
-
 			}
 			// if the heading is off by more than acceptable error, we must correct
 			if (Math.abs(deltaTheta) > errorThreshold) {
@@ -285,18 +260,8 @@ public class ObstacleAvoidanceNavigation extends Thread implements UltrasonicCon
 			leftMotor.rotate(convertAngle(wheelRadius, wheelDistance, rotate), true);
 			rightMotor.rotate(-convertAngle(wheelRadius, wheelDistance, rotate), false);		
 		}
-/*
-		//ADJUST BUT NOT ROTATE towards left
-		else if ( rotate > 0) {
-			leftMotor.setSpeed(turnSpeed);
-			rightMotor.setSpeed(fwdSpeed);
-		}
-		//ADJUST BUT NOT ROTATE towards right
-		else if ( rotate < 0) {
-			leftMotor.setSpeed(fwdSpeed);
-			rightMotor.setSpeed(turnSpeed);
-		}
-*/
+		
+		//This is the turnTo after bangbang was called
 		else {
 			leftMotor.setSpeed(rotationSpeed);
 			rightMotor.setSpeed(rotationSpeed);	
