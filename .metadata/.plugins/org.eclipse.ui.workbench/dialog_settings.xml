@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-<<<<<<< HEAD
 	<section name="WorkbenchPreferenceDialogSettings">
-		<item value="8" key="DIALOG_Y_ORIGIN"/>
-		<item value="231" key="DIALOG_X_ORIGIN"/>
+		<item value="195" key="DIALOG_X_ORIGIN"/>
+		<item value="14" key="DIALOG_Y_ORIGIN"/>
 	</section>
 	<section name="org.eclipse.ui.internal.QuickAccess">
 		<item value="525" key="dialogHeight"/>
@@ -12,26 +11,15 @@
 		</list>
 		<list key="orderedElements">
 		</list>
-=======
-	<section name="org.eclipse.ui.internal.QuickAccess">
-		<item value="800" key="dialogWidth"/>
-		<item value="500" key="dialogHeight"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
 		<list key="orderedProviders">
 		</list>
 		<list key="textArray">
 		</list>
-		<list key="orderedElements">
-		</list>
-		<list key="textEntries">
-		</list>
 	</section>
-<<<<<<< HEAD
-	<section name="FileSystemImportWizard">
-=======
-	<section name="WorkbenchPreferenceDialogSettings">
-		<item value="0" key="DIALOG_Y_ORIGIN"/>
-		<item value="231" key="DIALOG_X_ORIGIN"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
+	<section name="ImportExportAction">
+		<item value="org.eclipse.ui.wizards.import.ExternalProject" key="ImportExportPage.STORE_SELECTED_IMPORT_WIZARD_ID"/>
+		<list key="ImportExportPage.STORE_EXPANDED_IMPORT_CATEGORIES">
+			<item value="org.eclipse.ui.Basic"/>
+		</list>
 	</section>
 </section>

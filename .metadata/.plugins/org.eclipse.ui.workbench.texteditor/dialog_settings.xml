@@ -1,44 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-<<<<<<< HEAD
-	<section name="org.eclipse.ui.texteditor.GotoLineAction$GotoLineDialog_dialogBounds">
-		<item value="452" key="DIALOG_X_ORIGIN"/>
-		<item value="247" key="DIALOG_Y_ORIGIN"/>
-=======
-	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
-		<item value="265" key="DIALOG_WIDTH"/>
-		<item value="79" key="DIALOG_Y_ORIGIN"/>
-		<item value="399" key="DIALOG_HEIGHT"/>
-		<item value="463" key="DIALOG_X_ORIGIN"/>
-		<item value="1|.Helvetica Neue DeskInterface|11.0|0|COCOA|1|.HelveticaNeueDeskInterface-Regular" key="DIALOG_FONT_NAME"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
-	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item value="true" key="wrap"/>
 		<item value="false" key="isRegEx"/>
-<<<<<<< HEAD
-		<item value="lineDetected" key="selection"/>
-=======
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
+		<item value="getWidth" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
-		<item value="" key="selection"/>
 		<list key="findhistory">
-<<<<<<< HEAD
-			<item value="lineDetected"/>
-			<item value="sample"/>
-			<item value="sampleProvider"/>
-			<item value="navigation"/>
-			<item value="currentTheta"/>
-			<item value="current"/>
-			<item value="currenthe"/>
-			<item value="theta"/>
-=======
-			<item value="rotate"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
+			<item value="cent"/>
+			<item value="centi"/>
+			<item value="cm"/>
+			<item value="rotateBackward"/>
+			<item value="delay"/>
+			<item value="distance"/>
+			<item value="go"/>
+			<item value="travelby"/>
 		</list>
 		<list key="replacehistory">
+			<item value="rotateCounterClock"/>
 		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="257" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="381" key="DIALOG_HEIGHT"/>
+		<item value="563" key="DIALOG_X_ORIGIN"/>
+		<item value="118" key="DIALOG_Y_ORIGIN"/>
 	</section>
 </section>

@@ -4,6 +4,7 @@ import lejos.hardware.Sound;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 
 public class USLocalizer {
 	public enum LocalizationType { FALLING_EDGE, RISING_EDGE };
@@ -31,17 +32,19 @@ public class USLocalizer {
 		double [] pos = new double [3];
 		double angleA, angleB;
 		double threshold = 20;
+		odo.setPosition(new double[] { 0.0, 0.0, 0},
+				new boolean[] { true, true, true });
 		
 		if (locType == LocalizationType.FALLING_EDGE) {
 			// rotate the robot until it sees no wall
 			while (getFilteredData() <= threshold) {
-				rotateForward();
+				rotateClockwise();
 			}	
 			Sound.beep();
 			
 			// keep rotating until the robot sees a wall, then latch the angle
-			while (getFilteredData() + 10 >= threshold){
-				rotateForward();
+			while (getFilteredData()>= threshold){
+				rotateClockwise();
 			}
 			Sound.buzz();
 			angleA = odo.getAng();
@@ -51,13 +54,15 @@ public class USLocalizer {
 	        
 			// switch direction and wait until it sees no wall
 			while (getFilteredData() <= threshold) {
-				rotateBackward();
+				rotateCounterClock();
 			}
 			Sound.beep();
+			//To be sure to not to record the same wall
+			Delay.msDelay(500);
 			
 			// keep rotating until the robot sees a wall, then latch the angle
 			while (getFilteredData() >= threshold){
-				rotateBackward();
+				rotateCounterClock();
 			}
 			Sound.buzz();
 			angleB = odo.getAng();
@@ -69,13 +74,14 @@ public class USLocalizer {
 			// angleA is clockwise from angleB, so assume the average of the
 			// angles to the right of angleB is 45 degrees past 'north'
 			double deltaTheta = 0;
-			if (angleB > angleA) {
-				deltaTheta = 225 - ((angleA + angleB) / 2);
-			} else {
-				deltaTheta = 45 - ((angleA + angleB) / 2);
+			if (angleA > angleB) {
+				deltaTheta = 225 - (angleAverage(angleA, angleB));
+			} 
+			else {
+				deltaTheta = 45 - (angleAverage(angleA, angleB));
 			}
 			// update the odometer position (example to follow:)
-			odo.setPosition(new double[] { 0.0, 0.0, deltaTheta + angleB },
+			odo.setPosition(new double[] { 0.0, 0.0, odo.getAng() + deltaTheta },
 					new boolean[] { true, true, true });
 		} else {
 			/*
@@ -86,13 +92,13 @@ public class USLocalizer {
 			 */
 			
 			// rotate the robot until it sees a wall
-						while (getFilteredData() + 10 >= threshold) {
-							rotateForward();
+						while (getFilteredData() >= threshold) {
+							rotateClockwise();
 						}	
 						
 						// keep rotating until the robot sees no wall, then latch the angle
 						while (getFilteredData() <= threshold){
-							rotateForward();
+							rotateClockwise();
 						}
 						angleA = odo.getAng();
 						
@@ -100,14 +106,14 @@ public class USLocalizer {
 				        rightMotor.stop();
 						
 						// switch direction and wait until it sees a wall
-						while (getFilteredData() + 10 >= threshold) {
-							rotateBackward();
+						while (getFilteredData() >= threshold) {
+							rotateCounterClock();
 
 						}
 						
 						// keep rotating until the robot sees no wall, then latch the angle
 						while (getFilteredData() <= threshold){
-							rotateBackward();
+							rotateCounterClock();
 						}
 
 						
@@ -125,21 +131,19 @@ public class USLocalizer {
 						} else {
 							deltaTheta = 45 - ((angleA + angleB) / 2);
 						}
-						// update the odometer position (example to follow:)
+						// update the odometer position (example to follow:) angleB is the current angle
 						odo.setPosition(new double[] { 0.0, 0.0, deltaTheta + angleB },
 								new boolean[] { true, true, true });
-			
-
 		}
 	}
 	
-	public void rotateForward(){
+	public void rotateClockwise(){
 		rightMotor.setSpeed((int) ROTATION_SPEED); 
 		leftMotor.setSpeed((int) ROTATION_SPEED);
 		leftMotor.forward();
         rightMotor.backward();
 	}
-	public void rotateBackward(){
+	public void rotateCounterClock(){
 		rightMotor.setSpeed((int) ROTATION_SPEED); 
 		leftMotor.setSpeed((int) ROTATION_SPEED);
 		leftMotor.backward();
@@ -148,9 +152,26 @@ public class USLocalizer {
 	
 	private float getFilteredData() {
 		usSensor.fetchSample(usData, 0);
-		float distance = usData[0];
+		float distance = usData[0]*100;
 				
 		return distance;
+	}
+	
+	private double angleAverage(double a, double b){
+		double x = Math.abs(a-b);
+		double result=0;
+				if (x < 180){
+				   result = ((a + b) / 2);
+				}
+				else if (x != 180) {
+				   result = ((a + b) / 2) + 180;
+				}
+				  else {
+					  result = 180;
+				  }
+				   //two solutions are possible
+
+				return result % 360;
 	}
 
 }
