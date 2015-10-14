@@ -9,12 +9,20 @@ public class LightLocalizer {
 	private Odometer odo;
 	private SampleProvider colorSensor;
 	private float[] colorData;
-	Navigation navigation;
 	public static int ROTATION_SPEED = 100;
 	private static EV3LargeRegulatedMotor leftMotor;
 	private static EV3LargeRegulatedMotor rightMotor;
+	private static final double wheelRadius = 2.1; // right wheel radius (cm)
+	private static final double wheelDistance = 15.5; // wheel track (cm)
 	private int lineCount = 0;
+	private double approxDistanceCenter = 15;
 	private double angleLines[] = new double [4];
+	// deviation erro
+	private double k;
+	//distance (cm) from the light sensor to center of rotation
+	private double d = 12.65;
+
+	Navigation navigation;
 	
 	public LightLocalizer(Odometer odo, SampleProvider colorSensor, float[] colorData, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
 		this.odo = odo;
@@ -30,9 +38,16 @@ public class LightLocalizer {
 		
 		navigation.start();
 		
-		navigation.turnTo(0, true);
-		navigation.goForward(15);
 		
+		
+		//navigation.turnTo(45, true);
+		//navigation.goForward(approxDistanceCenter);
+		
+		
+		
+		 double position[] = {0,0,45};
+		boolean update[] = {true,true,true};
+				odo.setPosition(position, update); 
 		//while (!lineDetected())
 		
 		Sound.beepSequenceUp();
@@ -43,11 +58,11 @@ public class LightLocalizer {
 				odo.setPosition(position, update);
 				*/
 				
-				// start rotating clockwise
+				// start rotating counterclockwise 360 degrees
 				leftMotor.setSpeed(ROTATION_SPEED);
 		        rightMotor.setSpeed(ROTATION_SPEED);
-			    leftMotor.forward();
-		        rightMotor.backward();
+		        leftMotor.rotate(navigation.convertAngle(wheelRadius, wheelDistance, -360), false);
+				rightMotor.rotate(navigation.convertAngle(wheelRadius, wheelDistance,360), false);
 		        
 		 while (lineCount<4){
 			 if(lineDetected()){
@@ -55,27 +70,39 @@ public class LightLocalizer {
 				 lineCount++;
 				 Sound.beep();
 				 Delay.msDelay(500);
+				 
+				 //test
+				 leftMotor.stop();
+				 rightMotor.stop();
+				 Delay.msDelay(1500);
+				    leftMotor.backward();
+			        rightMotor.forward();
+				 
+				 
 			 }
 		 }
-		 
+		 /*
 		 leftMotor.stop();
 		 rightMotor.stop();
-		        
+		   */
+		 
 		 Sound.beepSequenceUp();       
 		 
 		 //Using formulas from the Localization slides
 		 //Find the x and y position and theta using trigonometry
-	     double deltaY = angleLines[3] - angleLines[1];
-	     double deltaX = angleLines[2] - angleLines[0];
-	     double x = -(odo.getWidth() * Math.cos(deltaY / 2));
-	     double y = -(odo.getWidth() * Math.cos(deltaX / 2));
+	     double deltaY = angleAverage(angleLines[0], angleLines[2]);
+	     double deltaX = angleAverage(angleLines[1], angleLines[3]);
+	     double x = -(d * Math.cos(deltaY));
+	     double y = -(d * Math.cos(deltaX));
 	     
-	     double newTheta = (deltaY / 2 + Math.PI - angleLines[3])+ odo.getAng();
+	    // double newTheta = (deltaY / 2 + 180 - angleLines[3])+ odo.getAng();
+	     double newTheta = 90 - angleLines[3] + 180 + deltaY;
 	     
 	     double newPosition[]={x, y, newTheta};
-	     boolean update[] = {true, true, true};
-	     odo.setPosition(newPosition, update);
+	    // boolean update[] = {true, true, true};
+	     odo.setPosition(newPosition, new boolean[] {true, true, true});
 	     
+	     Delay.msDelay(2000);
 	     navigation.travelTo(0, 0);
 	     navigation.turnTo(0,true);
 		 
@@ -94,5 +121,28 @@ public class LightLocalizer {
 		}
 		return false;
 	}
+	
+	private double angleDifference(double a, double b){
+		return Math.min((360) - Math.abs(a - b), Math.abs(a - b));
+	}
+	
+	//Method takes two angle a and b, and find the smaller average angle between the two possible ones
+	private double angleAverage(double a, double b){
+		double x = Math.abs(a-b);
+		double result=0;
+				if (x < 180){
+				   result = ((a + b) / 2);
+				}
+				else if (x != 180) {
+				   result = ((a + b) / 2) + 180;
+				}
+				  else {
+					  result = 180;
+				  }
+				   //two solutions are possible
+
+				return result % 360;
+	}
+
 
 }

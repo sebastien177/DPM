@@ -12,7 +12,7 @@ package ev3Localization;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
 public class Navigation extends Thread {
-	final static int FAST = 150, SLOW = 100, ACCELERATION = 4000;
+	final static int FAST = 200, SLOW = 100, ACCELERATION = 4000;
 	final static double DEG_ERR = 3.0, CM_ERR = 1.0;
 	private Odometer odometer;
 	private EV3LargeRegulatedMotor leftMotor, rightMotor;
@@ -121,11 +121,11 @@ public class Navigation extends Thread {
 	}
 	
 	//Methods to rotate, first convert the rotations into angle and second, the angle into distance
-	public static int convertDistance(double radius, double distance) {
+	private static int convertDistance(double radius, double distance) {
 		return (int) ((180.0 * distance) / (Math.PI * radius));
 	}
 
-	public static int convertAngle(double radius, double width, double angle) {
+	private static int convertAngle(double radius, double width, double angle) {
 		return convertDistance(radius, Math.PI * width * angle / 360.0);
 	}
 }

@@ -127,14 +127,15 @@ public class USLocalizer {
 						// angles to the right of angleB is 45 degrees past 'north'
 						double deltaTheta = 0;
 						if (angleA > angleB) {
-							deltaTheta = 225 - ((angleA + angleB) / 2);
-						} else {
-							deltaTheta = 45 - ((angleA + angleB) / 2);
+							deltaTheta = 225 - (angleAverage(angleA, angleB));
+						} 
+						else {
+							deltaTheta = 45 - (angleAverage(angleA, angleB));
 						}
-						// update the odometer position (example to follow:) angleB is the current angle
-						odo.setPosition(new double[] { 0.0, 0.0, deltaTheta + angleB },
+						// update the odometer position (example to follow:)
+						odo.setPosition(new double[] { 0.0, 0.0, odo.getAng() + deltaTheta },
 								new boolean[] { true, true, true });
-		}
+					}
 	}
 	
 	public void rotateClockwise(){
@@ -157,6 +158,7 @@ public class USLocalizer {
 		return distance;
 	}
 	
+	//Method takes two angle a and b, and find the smaller average angle between the two possible ones
 	private double angleAverage(double a, double b){
 		double x = Math.abs(a-b);
 		double result=0;
@@ -169,7 +171,6 @@ public class USLocalizer {
 				  else {
 					  result = 180;
 				  }
-				   //two solutions are possible
 
 				return result % 360;
 	}
