@@ -1,42 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-<<<<<<< HEAD
-	<section name="org.eclipse.ui.texteditor.GotoLineAction$GotoLineDialog_dialogBounds">
-		<item value="452" key="DIALOG_X_ORIGIN"/>
-		<item value="247" key="DIALOG_Y_ORIGIN"/>
-=======
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
 		<item value="265" key="DIALOG_WIDTH"/>
 		<item value="79" key="DIALOG_Y_ORIGIN"/>
-		<item value="399" key="DIALOG_HEIGHT"/>
 		<item value="463" key="DIALOG_X_ORIGIN"/>
+		<item value="399" key="DIALOG_HEIGHT"/>
 		<item value="1|.Helvetica Neue DeskInterface|11.0|0|COCOA|1|.HelveticaNeueDeskInterface-Regular" key="DIALOG_FONT_NAME"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
 	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="true" key="wrap"/>
-		<item value="false" key="isRegEx"/>
-<<<<<<< HEAD
-		<item value="lineDetected" key="selection"/>
-=======
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
 		<item value="false" key="casesensitive"/>
+		<item value="false" key="isRegEx"/>
 		<item value="false" key="incremental"/>
 		<item value="false" key="wholeword"/>
-		<item value="" key="selection"/>
+		<item value="usDa" key="selection"/>
 		<list key="findhistory">
-<<<<<<< HEAD
-			<item value="lineDetected"/>
-			<item value="sample"/>
-			<item value="sampleProvider"/>
-			<item value="navigation"/>
-			<item value="currentTheta"/>
-			<item value="current"/>
-			<item value="currenthe"/>
-			<item value="theta"/>
-=======
+			<item value="usDa"/>
 			<item value="rotate"/>
->>>>>>> 7362b5e99b980426a2bf7d87bd925a4eac635a10
+			<item value="colorPort"/>
 		</list>
 		<list key="replacehistory">
 		</list>

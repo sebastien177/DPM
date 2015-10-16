@@ -40,7 +40,7 @@ public class USLocalizer {
 			Sound.beep();
 			
 			// keep rotating until the robot sees a wall, then latch the angle
-			while (getFilteredData() + 10 >= threshold){
+			while (getFilteredData()  >= threshold){
 				rotateForward();
 			}
 			Sound.buzz();
@@ -100,7 +100,7 @@ public class USLocalizer {
 				        rightMotor.stop();
 						
 						// switch direction and wait until it sees a wall
-						while (getFilteredData() + 10 >= threshold) {
+						while (getFilteredData() >= threshold) {
 							rotateBackward();
 
 						}
