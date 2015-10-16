@@ -1,0 +1,35 @@
+package ev3Localization;
+
+import lejos.hardware.Button;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.hardware.sensor.SensorModes;
+import lejos.robotics.SampleProvider;
+
+public class test {
+public static void main(String[] args) {
+		double a = 270;
+		double b = 90;
+		
+		double c = angleAverage(a,b);
+		System.out.print(c);
+		
+	}
+private static double angleAverage(double a, double b){
+	double x = Math.abs(a-b);
+	double result=0;
+			if (x < 180){
+			   result = ((a + b) / 2);
+			}
+			else if (x != 180) {
+			   result = ((a + b) / 2) + 180;
+			}
+			  else {
+				  result = 180;
+			  }
+			   //two solutions are possible
+
+			return result % 360;
+}
+
+}

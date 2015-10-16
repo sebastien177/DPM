@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
+<<<<<<< HEAD
 <fullyQualifiedTypeName name="java.lang.Math"/>
 <fullyQualifiedTypeName name="java.lang.System"/>
 <fullyQualifiedTypeName name="lejos.hardware.Sound"/>
+=======
+<fullyQualifiedTypeName name="java.lang.Thread"/>
+<fullyQualifiedTypeName name="lejos.hardware.Sound"/>
+<fullyQualifiedTypeName name="java.lang.Math"/>
+<fullyQualifiedTypeName name="ev3Localization.USLocalizer"/>
+<fullyQualifiedTypeName name="lejos.utility.Delay"/>
+>>>>>>> da2e78f41594be4b1a4b32b539f14139e62a5af0
 </qualifiedTypeNameHistroy>

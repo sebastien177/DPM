@@ -3,18 +3,27 @@ package ev3Localization;
 import lejos.hardware.Sound;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 
 public class LightLocalizer {
 	private Odometer odo;
 	private SampleProvider colorSensor;
 	private float[] colorData;
-	Navigation navigation;
-	public static int ROTATION_SPEED = 30;
+	public static int ROTATION_SPEED = 80;
 	private static EV3LargeRegulatedMotor leftMotor;
 	private static EV3LargeRegulatedMotor rightMotor;
+	private static final double wheelRadius = 2.1; // right wheel radius (cm)
+	private static final double wheelDistance = 15.5; // wheel track (cm)
 	private int lineCount = 0;
+	private double approxDistanceCenter = 15;
 	private double angleLines[] = new double [4];
-	
+	// deviation erro
+	private double k;
+	//distance (cm) from the light sensor to center of rotation
+	private double d = 12.65;
+
+	Navigation navigation;
+
 	public LightLocalizer(Odometer odo, SampleProvider colorSensor, float[] colorData, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
 		this.odo = odo;
 		this.navigation = new Navigation(odo);
@@ -23,69 +32,134 @@ public class LightLocalizer {
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
 	}
-	
+
 	public void doLocalization() {	
 		Sound.beepSequenceUp();
-		
+
 		navigation.start();
-		
-		navigation.goForward(15);
-		
+
+
+
+		//navigation.turnTo(45, true);
+		//navigation.goForward(approxDistanceCenter);
+
+
+
+		double position[] = {0,0,45};
+		boolean update[] = {true,true,true};
+		odo.setPosition(position, update); 
 		//while (!lineDetected())
-		
+
 		Sound.beepSequenceUp();
+		/*
 		// set new origin
 		double position[] = {0,0,0};
-		boolean update[] = {true,true,true};
+		boolean update[] = {true,true,false};
 				odo.setPosition(position, update);
-				
-				// start rotating clockwise
-				leftMotor.setSpeed(ROTATION_SPEED);
-		        rightMotor.setSpeed(ROTATION_SPEED);
-			    leftMotor.forward();
-		        rightMotor.backward();
-		        
-		 while (lineCount<4){
-			 if(lineDetected()){
-				 angleLines[lineCount]= odo.getAng();
-				 lineCount++;
-			 }
-		 }
-		 
+		 */
+
+		// start rotating counterclockwise 360 degrees
+		rotateCounterClockwise();
+
+		//Count the number of lines (4) during the rotation
+		while (lineCount<4){
+			if(lineDetected()){
+				angleLines[lineCount]= odo.getAng();
+				lineCount++;
+				Sound.beep();
+				//wait 0.5 sec to make sure to not count the same line more than 1 time
+				Delay.msDelay(500);
+
+				//test
+				/*
+				 leftMotor.stop();
+				 rightMotor.stop();
+				 Delay.msDelay(1500);
+				    leftMotor.backward();
+			        rightMotor.forward();
+				 */
+
+			}
+		}
+
+		/*
 		 leftMotor.stop();
 		 rightMotor.stop();
-		        
-		        
-		 
-		 //Using formulas from the Localization slides
-		 //Find the x and y position and theta using trigonometry
-	     double deltaY = angleLines[3] - angleLines[1];
-	     double deltaX = angleLines[2] - angleLines[0];
-	     double x = -(odo.getWidth() * Math.cos(deltaY / 2));
-	     double y = -(odo.getWidth() * Math.cos(deltaX / 2));
-	     
-	     double newTheta = (deltaY / 2 + Math.PI - angleLines[3])+ odo.getAng();
-	     
-	     double newPosition[]={x, y, newTheta};
-	     odo.setPosition(newPosition, update);
-	     
-	     navigation.travelTo(0, 0);
-	     navigation.turnTo(0,true);
-		 
-		// drive to location listed in tutorial
-		// start rotating and clock all 4 gridlines
-		// do trig to compute (0,0) and 0 degrees
-		// when done travel to (0,0) and turn to 0 degrees
-		 
-		 
+		 */
+
+		Sound.beepSequenceUp();       
+
+		//Using formulas from the Localization slides
+		//Find the x and y position and theta using trigonometry
+		
+		
+		double deltaY = angleAverage(angleLines[0], angleLines[2]);
+		/*
+		double deltaX = angleAverage(angleLines[1], angleLines[3]);
+		double x = -(d * Math.cos(deltaY));
+		double y = -(d * Math.cos(deltaX));
+		*/
+		
+		double x = getPos(angleLines[0], angleLines[2]);
+		double y = getPos(angleLines[1], angleLines[3]);
+		
+
+		// double newTheta = (deltaY / 2 + 180 - angleLines[3])+ odo.getAng();
+		
+		double newTheta = odo.getAng() + 90 - angleLines[3] + 180 + deltaY;
+
+		double newPosition[]={x, y, newTheta};
+		// boolean update[] = {true, true, true};
+		odo.setPosition(newPosition, new boolean[] {true, true, true});
+
+		Delay.msDelay(2000);
+		navigation.travelTo(0, 0);
+		navigation.turnTo(90,true);
 	}
-	
+
+	//rotating counterclockwise 360 degrees
+	private void rotateCounterClockwise(){
+		leftMotor.setSpeed(ROTATION_SPEED);
+		rightMotor.setSpeed(ROTATION_SPEED);
+		leftMotor.rotate(navigation.convertAngle(wheelRadius, wheelDistance, -360), true);
+		rightMotor.rotate(navigation.convertAngle(wheelRadius, wheelDistance,360), false);
+	}
+
+	//return true if a line is detected by the sensor
 	private boolean lineDetected(){
 		colorSensor.fetchSample(colorData, 0);
-		if ( colorData[0]*100 <= 35){
+		if ( colorData[0]*100 < 35){
 			return true;
 		}
 		return false;
 	}
+	
+	//Compute position for x,y using the formula from the tutorial slides
+	private double getPos (double angleA, double angleB){
+		return -d*Math.cos((angleB-angleA)/2);
+	}
+	
+	//Compute and take the smallest difference of two angles
+	private double angleDifference(double a, double b){
+		return Math.min((360) - Math.abs(a - b), Math.abs(a - b));
+	}
+
+	//Method takes two angle a and b, and find the smaller average angle between the two possible ones
+	private double angleAverage(double a, double b){
+		double x = Math.abs(a-b);
+		double result=0;
+		if (x < 180){
+			result = ((a + b) / 2);
+		}
+		else if (x != 180) {
+			result = ((a + b) / 2) + 180;
+		}
+		else {
+			result = 180;
+		}
+
+		return result % 360;
+	}
+
 
 }

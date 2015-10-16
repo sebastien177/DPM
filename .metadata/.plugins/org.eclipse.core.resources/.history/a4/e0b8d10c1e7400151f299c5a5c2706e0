@@ -1,0 +1,18 @@
+package ev3ObjectRecognition;
+import lejos.hardware.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.robotics.SampleProvider;
+
+
+public class ObjectRecognition {
+	private SampleProvider colorSensor;
+	private SampleProvider usSensor;
+	public ObjectRecognition(SampleProvider colorSensor, SampleProvider usSensor){
+		this.colorSensor = colorSensor;
+		this.usSensor = usSensor;
+		
+	}
+}

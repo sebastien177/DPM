@@ -1,0 +1,18 @@
+package ev3ObjectRecognition;
+
+import lejos.hardware.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.robotics.SampleProvider;
+
+public class Driver {
+	
+	private static EV3ColorSensor lightSensor;
+	private static EV3UltrasonicSensor usSensor;
+	
+	
+	public Driver (EV3UltrasonicSensor usSensor, EV3ColorSensor lightSensor, Odometer odo, Navigation nav, ObjectRecognition OR,)
+
+}
