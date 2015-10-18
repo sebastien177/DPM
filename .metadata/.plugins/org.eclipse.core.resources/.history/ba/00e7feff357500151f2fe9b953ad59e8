@@ -1,0 +1,15 @@
+package ev3ObjectRecognition;
+
+import lejos.ev3.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.hardware.*;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.port.Port;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
+
+public class ObjectDetection extends Thread{
+
+}

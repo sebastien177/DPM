@@ -6,6 +6,7 @@ import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
+import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 
@@ -14,8 +15,11 @@ public class Lab5 {
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
 	private static final EV3LargeRegulatedMotor usMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("C"));
+	private static final EV3UltrasonicSensor ultraSensor = new EV3UltrasonicSensor(SensorPort.S1);
 	private static final Port usPort = LocalEV3.get().getPort("S1");		
 	private static final Port colorPort = LocalEV3.get().getPort("S2");	
+	public static final double WHEEL_RADIUS = 2.17;
+	public static final double TRACK = 15.175;
 	
 	public static void main(String[] args) {
 		int buttonChoice;
@@ -41,9 +45,10 @@ public class Lab5 {
 						
 				// setup the odometer and display
 				Odometer odo = new Odometer(leftMotor, rightMotor, 30, true);
-				
-				
-				USLocalizer usl = new USLocalizer(odo, usValue, usData, USLocalizer.LocalizationType.FALLING_EDGE, leftMotor,rightMotor);
+				Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
+				BlockRecognition br = new BlockRecognition(odo,  usSensor,  usData,  colorSensor,colorData);
+				ObjectDetection od = new ObjectDetection(colorSensor, colorData, usValue, usData);
+				USLocalizer usl = new USLocalizer(odo, ultraSensor,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
 				final TextLCD t = LocalEV3.get().getTextLCD();
 		
 			do {
@@ -53,7 +58,7 @@ public class Lab5 {
 			// ask the user whether to navigate with or without the obstacle
 			t.drawString("< Left  |Right >", 0, 0);
 			t.drawString("        |       ", 0, 1);
-			t.drawString("Localize|Detect ", 0, 2);
+			t.drawString("Detect|Search ", 0, 2);
 
 			buttonChoice = Button.waitForAnyPress();
 
@@ -62,15 +67,12 @@ public class Lab5 {
 
 		// for testing, we added this to avoid localizing each time
 		if (buttonChoice == Button.ID_LEFT) {
-			usl.doLocalization();
-			Sound.beep(); // just to indicate beginning of block detection
+			od.run();
 		}
 
-		Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
-		BlockRecognition br = new BlockRecognition(odo,  usSensor,  usData,  colorSensor,colorData);
 		new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
 	
-
+		usl.doLocalization();
 		// begin the threads
 		scan.start();
 		br.start();

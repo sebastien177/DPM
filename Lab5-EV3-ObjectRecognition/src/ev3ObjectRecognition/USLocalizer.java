@@ -1,181 +1,242 @@
 package ev3ObjectRecognition;
 
-import lejos.hardware.Sound;
-import lejos.hardware.ev3.LocalEV3;
+
+import lejos.*;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
-import lejos.robotics.SampleProvider;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.utility.Delay;
 
 public class USLocalizer {
-	public enum LocalizationType { FALLING_EDGE, RISING_EDGE };
-	public static double ROTATION_SPEED = 100;
-	public static final double DEFAULT_LEFT_RADIUS = 2.145;
-	public static final double DEFAULT_RIGHT_RADIUS = 2.145;
-	public static final double DEFAULT_WIDTH = 15.25;
-	private Odometer odo;
-	private SampleProvider usSensor;
-	private float[] usData;
-	private LocalizationType locType;
-	private EV3LargeRegulatedMotor leftMotor,rightMotor;
+	public enum LocalizationType { // The two types of ultrasonic localization
+		FALLING_EDGE, RISING_EDGE
+	};
 	
-	public USLocalizer(Odometer odo,  SampleProvider usSensor, float[] usData, LocalizationType locType,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
+	// Constant speed of the robot's rotation
+	public static double ROTATION_SPEED = 30;
+	public static double SENSOR_DISTANCE = 12.0; // Distance of the sensor from the robot's center
+	private static double turnError = 1.5; 
+	private double leftRadius, rightRadius, width;
+	private double forwardSpeed, rotationSpeed;
+
+	// Declaration of class variables
+	private Odometer odo;
+	private EV3UltrasonicSensor us;
+	private LocalizationType locType;
+	private EV3LargeRegulatedMotor leftMotor;
+	private EV3LargeRegulatedMotor rightMotor;
+
+
+	public USLocalizer(Odometer odo, EV3UltrasonicSensor us,
+			LocalizationType locType, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double wheelRadius, double width) {
 		this.odo = odo;
-		this.usSensor = usSensor;
-		this.usData = usData;
-		this.locType = locType;
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
-		
+		this.us = us;
+		this.locType = locType;
+		this.leftRadius= wheelRadius;
+		this.rightRadius = wheelRadius;
+		this.width = width;
 	}
-	
+
+	// Performs the ultrasonic localization
 	public void doLocalization() {
-		double [] pos = new double [3];
+		// Building the navigation with the odometer
+		Navigation nav = new Navigation(this.odo);
+		// The two angles of the robot when it senses both walls
 		double angleA, angleB;
-		double threshold = 20;
-		odo.setPosition(new double[] { 0.0, 0.0, 0},
-				new boolean[] { true, true, true });
-		
+		// double Error = 1.0;
+		double threshold = 41; // The threshold value when a robot sees the wall
+		// Setting the position of the robot to all 0.
+		odo.setPosition(new double[] { 0.0, 0.0, 0.0 }, new boolean[] { true,
+				true, true });
+		// Falling edge localization routine
 		if (locType == LocalizationType.FALLING_EDGE) {
-			// rotate the robot until it sees no wall
-			while (getFilteredData() <= threshold) {
-				rotateClockwise();
-			}	
-			Sound.beep();
-			
-			// keep rotating until the robot sees a wall, then latch the angle
 
-			while (getFilteredData()>= threshold){
-				rotateClockwise();
+			// Rotate the robot until it sees no wall
+			while (getFilteredData() <= threshold) {
+				setRotationSpeed(-25);
 
 			}
-			Sound.buzz();
+			// Determining the angle when it sees no wall
 			angleA = odo.getAng();
-			
-			leftMotor.stop();
-	        rightMotor.stop();
-	        
-			// switch direction and wait until it sees no wall
-			while (getFilteredData() <= threshold) {
-				rotateCounterClock();
-			}
-			Sound.beep();
-			//To be sure to not to record the same wall
 			Delay.msDelay(500);
-			
-			// keep rotating until the robot sees a wall, then latch the angle
-			while (getFilteredData() >= threshold){
-				rotateCounterClock();
-			}
-			Sound.buzz();
-			angleB = odo.getAng();
-			
-			leftMotor.stop();
-	        rightMotor.stop();
 
-			
+			// Keep rotating until the robot sees a wall, then latch the angle
+			while (getFilteredData() + 10 >= threshold) {
+
+				setRotationSpeed(-35);
+
+			}
+
+			// Switch direction and wait until it sees no wall
+			while (getFilteredData() <= threshold) {
+
+				setRotationSpeed(10);
+
+			}
+			// Tracking the angle when it senses the second wall
+			angleB = odo.getAng();
+
+			// Stop the robot after it senses two walls
+			setRotationSpeed(0);
+
 			// angleA is clockwise from angleB, so assume the average of the
 			// angles to the right of angleB is 45 degrees past 'north'
-			double deltaTheta = 0;
+
+			double theta = 0;
 			if (angleA > angleB) {
-				deltaTheta = 225 - (angleAverage(angleA, angleB));
-			} 
-			else {
-				deltaTheta = 45 - (angleAverage(angleA, angleB));
-			}
-			// update the odometer position (example to follow:)
-			odo.setPosition(new double[] { 0.0, 0.0, odo.getAng() + deltaTheta },
-					new boolean[] { true, true, true });
-		} else {
-			/*
-			 * The robot should turn until it sees the wall, then look for the
-			 * "rising edges:" the points where it no longer sees the wall.
-			 * This is very similar to the FALLING_EDGE routine, but the robot
-			 * will face toward the wall for most of it.
-			 */
-			
-			// rotate the robot until it sees a wall
-						while (getFilteredData() >= threshold) {
-							rotateClockwise();
-						}	
-						
-						// keep rotating until the robot sees no wall, then latch the angle
-						while (getFilteredData() <= threshold){
-							rotateClockwise();
-						}
-						angleA = odo.getAng();
-						
-						leftMotor.stop();
-				        rightMotor.stop();
-						
-						// switch direction and wait until it sees a wall
-						while (getFilteredData() >= threshold) {
-
-							rotateCounterClock();
-
-						}
-						
-						// keep rotating until the robot sees no wall, then latch the angle
-						while (getFilteredData() <= threshold){
-							rotateCounterClock();
-						}
-
-						
-						angleB = odo.getAng();
-						
-						//Stop Rotating
-						leftMotor.stop();
-				        rightMotor.stop();
-						
-						// angleA is clockwise from angleB, so assume the average of the
-						// angles to the right of angleB is 45 degrees past 'north'
-						double deltaTheta = 0;
-						if (angleA > angleB) {
-							deltaTheta = 225 - (angleAverage(angleA, angleB));
-						} 
-						else {
-							deltaTheta = 45 - (angleAverage(angleA, angleB));
-						}
-						// update the odometer position (example to follow:)
-						odo.setPosition(new double[] { 0.0, 0.0, odo.getAng() + deltaTheta },
-								new boolean[] { true, true, true });
-					}
-	}
-	
-	public void rotateClockwise(){
-		rightMotor.setSpeed((int) ROTATION_SPEED); 
-		leftMotor.setSpeed((int) ROTATION_SPEED);
-		leftMotor.forward();
-        rightMotor.backward();
-	}
-	public void rotateCounterClock(){
-		rightMotor.setSpeed((int) ROTATION_SPEED); 
-		leftMotor.setSpeed((int) ROTATION_SPEED);
-		leftMotor.backward();
-        rightMotor.forward();
-	}
-	
-	private float getFilteredData() {
-		usSensor.fetchSample(usData, 0);
-		float distance = usData[0]*100;
 				
+				theta = 45 - (angleA + angleB) / 2;
+				theta += odo.getAng();
+			} else {
+				
+				theta = 230 - (angleA + angleB) / 2;
+			}
+
+			// Updating the odometer's angle after it does the ultrasonic localization
+			odo.setPosition(new double[] { 0.0, 0.0, theta }, new boolean[] {
+					true, true, true });
+
+			// 
+			for (int i = 0; i < 50; i++) {
+				setRotationSpeed(-10);
+			}
+
+			// This rotation is to face the wall directly to get its x position
+			while (odo.getAng() > 270) {
+				setRotationSpeed(-20);
+				
+
+			}
+			
+			setRotationSpeed(0);
+
+			// Calculating the x position taking into consideration the sensor distance
+			double xPosition = (getFilteredData() + SENSOR_DISTANCE);
+
+			// Updating the x position of the robot after facing the wall
+			odo.setPosition(new double[] { -xPosition, 0.0, odo.getAng() },
+					new boolean[] { true, false, false });
+
+			// This keeps turning to face another wall to get its y position
+			while (odo.getAng() > 180) {
+
+				setRotationSpeed(-20);
+			}
+			
+			setRotationSpeed(0);
+
+			// Calculating the y position taking into consideration the sensor distance
+			double yPosition = (getFilteredData() + SENSOR_DISTANCE);
+
+			
+			// Setting the final position of the robot after localizing
+			odo.setPosition(
+					new double[] { 0.0, -yPosition, odo.getAng() },
+					new boolean[] { false, true, false });
+
+			// Turning to the 0 degrees so it is facing the same orientation as the origin
+			while (180.0 - odo.getAng() + turnError < 180) {
+
+				setRotationSpeed(-30);
+				
+			}
+			// Stop the robot after reaching the origin
+			setRotationSpeed(0);
+			
+			nav.travelTo(0, 0);
+			// After updating its position relative to the origin and is facing the origin, drive to a 
+			// point near the origin (here is -5.0, -4.0) to start light localization
+			odo.setPosition(
+					new double[] { 0.0, 0.0, odo.getAng()},
+					new boolean[] { true, true, true });
+
+
+		}
+	}
+
+	// This is a getting to get the filtered ultrasonic sensor (used for display purposes)
+	public int getData() {
+		return getFilteredData();
+	}
+
+	// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
+	private int getFilteredData() {
+		float[] usData = new float[us.getDistanceMode().sampleSize()];
+		
+		// wait for the ping to complete
+		try {
+			Thread.sleep(25);
+		} 
+		catch (InterruptedException e) {
+			
+		}
+		us.getDistanceMode().fetchSample(usData, 0);
+		int distance = (int) (usData[0]*100);
+
+		LCD.drawInt((int) distance, 3, 3);
+		
+		// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
+		// to be 35
+
+		if (distance > 42) {
+
+			distance = 42;
+
+		}
+
 		return distance;
+
 	}
 	
-	//Method takes two angle a and b, and find the smaller average angle between the two possible ones
-	private double angleAverage(double a, double b){
-		double x = Math.abs(a-b);
-		double result=0;
-				if (x < 180){
-				   result = ((a + b) / 2);
-				}
-				else if (x != 180) {
-				   result = ((a + b) / 2) + 180;
-				}
-				  else {
-					  result = 180;
-				  }
-
-				return result % 360;
+	public void setForwardSpeed(double speed) {
+		forwardSpeed = speed;
+		setSpeeds(forwardSpeed, rotationSpeed);
 	}
+	
+	public void setRotationSpeed(double speed) {
+		rotationSpeed = speed;
+		setSpeeds(forwardSpeed, rotationSpeed);
+	}
+	
+	public void setSpeeds(double forwardSpeed, double rotationalSpeed) {
+		double leftSpeed, rightSpeed;
+
+		this.forwardSpeed = forwardSpeed;
+		this.rotationSpeed = rotationalSpeed; 
+
+		leftSpeed = (forwardSpeed + rotationalSpeed * width * Math.PI / 360.0) *
+				180.0 / (leftRadius * Math.PI);
+		rightSpeed = (forwardSpeed - rotationalSpeed * width * Math.PI / 360.0) *
+				180.0 / (rightRadius * Math.PI);
+
+		// set motor directions
+		if (leftSpeed > 0.0)
+			this.leftMotor.forward();
+		else {
+			this.leftMotor.backward();
+			leftSpeed = -leftSpeed;
+		}
+		
+		if (rightSpeed > 0.0)
+			this.rightMotor.forward();
+		else {
+			this.rightMotor.backward();
+			rightSpeed = -rightSpeed;
+		}
+		
+		// set motor speeds
+		if (leftSpeed > 900.0)
+			this.leftMotor.setSpeed(900);
+		else
+			this.leftMotor.setSpeed((int)leftSpeed);
+		
+		if (rightSpeed > 900.0)
+			this.rightMotor.setSpeed(900);
+		else
+			this.rightMotor.setSpeed((int)rightSpeed);
+	}
+	
 
 }

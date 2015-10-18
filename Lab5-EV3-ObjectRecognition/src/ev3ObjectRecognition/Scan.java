@@ -15,7 +15,6 @@ public class Scan extends Thread{
 	private float[] colorData;
 	private Odometer odo;
 	private Navigation nav;
-	private ObjectRecognition OR;
 	private EV3LargeRegulatedMotor rightMotor;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor usMotor;
