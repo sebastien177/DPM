@@ -37,12 +37,16 @@ public class BlockRecognition extends Thread {
 	int[] distanceArray = new int[5];
 	int[] sortedArray = new int[5];
 	
-	public BlockRecognition(Odometer odo, SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData){
+	public BlockRecognition(Odometer odo, SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData,
+			EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor leftMotor){
 		this.odo = odo;
 		this.usSensor = usSensor;
 		this.usData = usData;
 		this.colorSensor = colorSensor;
-		this.colorData = colorData;	}
+		this.colorData = colorData;	
+		this.rightMotor = rightMotor;
+		this.leftMotor = leftMotor;
+		}
 	
 	public void startRun(){
 		
@@ -130,18 +134,18 @@ public class BlockRecognition extends Thread {
 
 		// travel in a straight line indefinitely
 		public void goForward() {
-			leftMotor.forward();
-			rightMotor.forward();
 			leftMotor.setSpeed(FORWARD_SPEED);
 			rightMotor.setSpeed(FORWARD_SPEED);
+			leftMotor.forward();
+			rightMotor.forward();
 		}
 
 		// travel backwards indefinitely
 		public void goBackward() {
-			leftMotor.backward();
-			rightMotor.backward();
 			leftMotor.setSpeed(FORWARD_SPEED);
 			rightMotor.setSpeed(FORWARD_SPEED);
+			leftMotor.backward();
+			rightMotor.backward();
 		}
 
 		// stops the robot

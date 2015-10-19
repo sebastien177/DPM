@@ -1,0 +1,156 @@
+package ev3Localization;
+
+import lejos.hardware.Sound;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
+
+public class USLocalizer {
+	public enum LocalizationType { FALLING_EDGE, RISING_EDGE };
+	public static double ROTATION_SPEED = 100;
+	public static final double DEFAULT_LEFT_RADIUS = 2.145;
+	public static final double DEFAULT_RIGHT_RADIUS = 2.145;
+	public static final double DEFAULT_WIDTH = 15.25;
+	private Odometer2 odo;
+	private Odometer odo1;
+	private SampleProvider usSensor;
+	private float[] usData;
+	private LocalizationType locType;
+	private EV3LargeRegulatedMotor leftMotor,rightMotor;
+	Navigation navigation;
+	
+	public USLocalizer(Odometer2 odo,  SampleProvider usSensor, float[] usData, LocalizationType locType,EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, Odometer odo1) {
+		this.odo = odo;
+		this.usSensor = usSensor;
+		this.usData = usData;
+		this.locType = locType;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+		this.odo1=odo1;
+		this.navigation = new Navigation(2.145,2.145,15.25,leftMotor,rightMotor,odo1);
+		
+	}
+	
+
+	
+	public void doLocalization() {
+		
+		double angleA, angleB;
+		
+		if (locType == LocalizationType.FALLING_EDGE) {
+
+			// rotate the robot until it sees no wall
+			navigation.rotate(100, Navigation.RotationType.ClockWise);
+			
+			while(isWallDetected()){
+			}
+			
+			try { Thread.sleep(1000); } catch (InterruptedException e) {}
+			
+			// keep rotating until the robot sees a wall, then latch the angle
+			while(!isWallDetected()){
+			}
+			
+			navigation.stop();
+			
+			angleA = odo1.getTheta();
+
+			// switch direction and wait until it sees no wall
+			navigation.rotate(100, Navigation.RotationType.CounterClockWise);
+			
+			try { Thread.sleep(1000); } catch (InterruptedException e) {}
+			
+			while(isWallDetected()){
+			}
+			// keep rotating until the robot sees a wall, then latch the angle
+			while(!isWallDetected()){
+			}
+			
+			navigation.stop();
+			angleB = odo1.getTheta();
+
+			double orientation = findOrientation(angleA, angleB, locType);
+			odo1.setTheta(orientation);
+		} else {
+			/*
+			 * The robot should turn until it sees the wall, then look for the
+			 * "rising edges:" the points where it no longer sees the wall.
+			 * This is very similar to the FALLING_EDGE routine, but the robot
+			 * will face toward the wall for most of it.
+			 */
+			
+			// rotate the robot until it sees a wall
+			navigation.rotate(100, Navigation.RotationType.ClockWise);
+
+			while(!isWallDetected()){
+			}
+
+			try { Thread.sleep(1000); } catch (InterruptedException e) {}
+
+			// keep rotating until the robot sees no wall, then latch the angle
+			while(isWallDetected()){
+			}
+
+			navigation.stop();
+
+			angleA = odo1.getTheta();
+
+			// switch direction and wait until it sees a wall
+			navigation.rotate(100, Navigation.RotationType.CounterClockWise);
+
+			try { Thread.sleep(1000); } catch (InterruptedException e) {}
+
+			while(!isWallDetected()){
+			}
+			// keep rotating until the robot sees no wall, then latch the angle
+			while(isWallDetected()){
+			}
+
+			navigation.stop();
+			angleB = odo1.getTheta();
+
+			double orientation = findOrientation(angleA, angleB, locType);
+			odo1.setTheta(orientation);
+		}
+	}
+	
+	private int getFilteredData() {
+		usSensor.fetchSample(usData, 0);
+		int distance = (int)usData[0]*100;
+		
+		
+		if (distance > 50)
+			distance = 50;
+				
+		return distance;
+		
+		
+				
+		return distance;
+	}
+	
+	private boolean isWallDetected() 
+	{
+		if(getFilteredData() < MAX_WALL_DISTANCE)
+			return true;
+			
+		return false;
+	}
+	
+	public double findOrientation(double angleA, double angleB, LocalizationType locType)
+	{
+		double deltaAngle = angleB - angleA;
+		
+		double orientation;
+		
+		if(locType == LocalizationType.FALLING_EDGE) {
+			orientation = (Math.PI/4) + (deltaAngle/2);
+		}
+		else {
+			orientation = (5*Math.PI/4)+ (deltaAngle/2);
+		}
+		
+		return orientation;
+	}
+}

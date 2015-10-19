@@ -1,0 +1,124 @@
+package ev3Localization;
+
+import lejos.hardware.Sound;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
+
+public class LightLocalizer {
+	private Odometer odo;
+	private SampleProvider colorSensor;
+	private float[] colorData;
+	public static int ROTATION_SPEED = 70;
+	private static EV3LargeRegulatedMotor leftMotor;
+	private static EV3LargeRegulatedMotor rightMotor;
+	private static final double wheelRadius = 2.145; // right wheel radius (cm)
+	private static final double wheelDistance = 15.25; // wheel track (cm)
+	private int lineCount = 0;
+	private double approxDistanceCenter = 15;
+	private double angleLines[] = new double [4];
+	// deviation erro
+	private double k;
+	//distance (cm) from the light sensor to center of rotation
+	private double d = 12.5;
+
+	Navigation navigation;
+
+	public LightLocalizer(Odometer odo, SampleProvider colorSensor, float[] colorData, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
+		this.odo = odo;
+		this.navigation = new Navigation(2.145,2.145,15.25,leftMotor,rightMotor,odo);
+		this.colorSensor = colorSensor;
+		this.colorData = colorData;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+	}
+
+public void doLocalization() {
+	
+		
+		double[] spinAngles = new double[4];
+		
+		
+		//turn toward (0,0)
+		//navigation.turnTo(45, true);
+		navigation.travelDistance(15);
+		spinOnItself(spinAngles);
+		
+		double xPos = calculatePos(spinAngles[0], spinAngles[2]);
+		double yPos = calculatePos(spinAngles[1], spinAngles[3]);
+		
+		odo.setX(xPos);
+		odo.setY(yPos);
+		
+		navigation.travelTo(0, 0);
+		navigation.turnTo(90, false);
+		
+	}
+	
+	public boolean isLineDetected(){
+		colorSensor.fetchSample(colorData, 0);
+		if( colorData[0]*100 < 35)
+			return true;
+		
+		return false;
+	}
+	
+	public void spinOnItself(double[] angles){
+		int angleCount = 0;
+		
+		(new Thread() {public void run() {navigation.turnAngle(2*Math.PI);}}).start();
+		try {Thread.sleep(50);} catch (Exception e) {}
+		
+		while(navigation.isNavigating() && angleCount < 4){
+			
+			if(isLineDetected()){
+				angles[angleCount] = odo.getTheta();
+				angleCount++;
+				try {Thread.sleep(300);} catch (Exception e) {}
+			}
+		}
+	}
+	
+	public double calculatePos(double firstAngle, double secondAngle){
+		return (-12.5*Math.cos((secondAngle-firstAngle)/2));
+	}
+	
+	
+	//return true if a line is detected by the sensor
+	private boolean lineDetected(){
+		colorSensor.fetchSample(colorData, 0);
+		if ( colorData[0]*100 < 35){
+			return true;
+		}
+		return false;
+	}
+	
+	//Compute position for x,y using the formula from the tutorial slides
+	private double getPos (double angleA, double angleB){
+		return -d*Math.cos(Math.abs(angleDifference(angleA+180,angleB+180))/2);
+	}
+	
+	//Compute and take the smallest difference of two angles
+	private double angleDifference(double a, double b){
+		return Math.min((360) - Math.abs(a - b), Math.abs(a - b));
+	}
+
+	//Method takes two angle a and b, and find the smaller average angle between the two possible ones
+	private double angleAverage(double a, double b){
+		double x = Math.abs(a-b);
+		double result=0;
+		if (x < 180){
+			result = ((a + b) / 2);
+		}
+		else if (x != 180) {
+			result = ((a + b) / 2) + 180;
+		}
+		else {
+			result = 180;
+		}
+
+		return result % 360;
+	}
+
+
+}

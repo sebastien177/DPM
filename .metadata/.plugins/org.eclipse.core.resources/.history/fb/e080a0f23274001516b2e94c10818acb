@@ -1,0 +1,96 @@
+package lab5;
+
+/* Lab 5: Object Detection & Navigation
+ * 
+ * File: Lab5.java (Main class of Lab 5)
+ * 
+ * ECSE-211: Design Principles and Methods
+ * 
+ * Students: Luke Soldano & Tuan-Anh Nguyen (Group 8)
+ * 
+ * This is the main class of Lab 5. It starts by localizing and then will go into a scan algorithm to 
+ * move and search for "obstacles" in its vicinity. If there are, the robot will go to it and analyze it. 
+ * If it is a wooden block, it will avoid it. If it is a blue styrofoam block, it will take it and
+ * move it to the top right corner of the board.
+ * 
+ */
+
+
+import lejos.ev3.*;
+import lejos.hardware.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.robotics.SampleProvider;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.hardware.sensor.SensorModes;
+import lejos.hardware.port.SensorPort;
+
+
+public class Lab5 {
+	
+	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+	private static final Port usPort = LocalEV3.get().getPort("S1");	
+	private static final Port colorPort = LocalEV3.get().getPort("S2");		
+	
+	public static void main(String[] args) {
+
+		//Button.waitForAnyPress();
+		
+		// Building the necessary objects for the robot to function:
+		// robot type, an odometer, an ultrasonic sensor, the lcd,
+		// the navigation, localization, and object detection and navigation (commandCenter())
+		
+		@SuppressWarnings("resource")							    	// Because we don't bother to close this resource
+		SensorModes usSensor = new EV3UltrasonicSensor(usPort);
+		SampleProvider usValue = usSensor.getMode("Distance");			// colorValue provides samples from this instance
+		float[] usData = new float[usValue.sampleSize()];				// colorData is the buffer in which data are returned
+		
+		TwoWheeledRobot robot = new TwoWheeledRobot(leftMotor, rightMotor);
+		Odometer odo = new Odometer(robot, 30, true);
+		LCDInfo lcd = new LCDInfo(odo);
+		Navigation nav = new Navigation(odo);
+
+
+		SensorModes colorSensor = new EV3ColorSensor(colorPort);
+		SampleProvider colorValue = colorSensor.getMode("Red");			// colorValue provides samples from this instance
+		float[] colorData = new float[colorValue.sampleSize()];			// colorData is the buffer in which data are returned
+		
+		LCDInfo lcd2 = new LCDInfo(odo, usValue, usData, colorValue, colorData );
+		
+		Button.waitForAnyPress();
+		
+		// Localizing the robot at the beginning via falling edge method
+		
+		 USLocalizer localizer = new USLocalizer(odo, usValue, usData, USLocalizer.LocalizationType.FALLING_EDGE);
+		 localizer.doLocalization();
+		 
+		 // After localizing, the odometer will reset to 0, 0 , 0 so the robot knows it is at the origin
+		 odo.setPosition(new double[] { 0.0, 0.0, 0.0 }, new boolean[] { true,
+				true, true });
+		 
+		Button.waitForAnyPress();
+		
+		// Building the major components of lab 5. The object recognition object is responsible
+		// to tell if it is a wooden block or styrofoam block
+		//ObjectRecognition o = new ObjectRecognition(ultrasonic, color, robot);
+		
+		// Babu is the name of our robot so this class is responsible for navigating around the board
+		// and searching for objects to go analyze
+		
+		//Babu babu = new Babu(ultrasonic, odo, nav, robot, o, color);
+		//babu.commandCenter();
+
+	}
+	
+	public static EV3LargeRegulatedMotor getLeftMotor(){
+		return leftMotor;
+	}
+	
+	public static EV3LargeRegulatedMotor getRightMotor (){
+		return rightMotor;
+	}
+}

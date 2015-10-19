@@ -3,6 +3,7 @@ package ev3ObjectRecognition;
 
 import lejos.ev3.*;
 import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.*;
 import lejos.hardware.*;
@@ -18,8 +19,10 @@ public class ObjectDetection extends Thread{
 	private SampleProvider usSensor;
 	private float[] usData;
 	private static final long TIME_PERIOD = 10;
-	
-	
+	private double threshold = 4;
+	private double upper_threshold = 20;
+
+
 	// constructor
 	public ObjectDetection(SampleProvider colorSensor, float[] colorData, SampleProvider usSensor, float[] usData) {
 		this.colorSensor = colorSensor;
@@ -27,51 +30,66 @@ public class ObjectDetection extends Thread{
 		this.usSensor = usSensor;
 		this.usData = usData;
 	}
-	
+
 	// run method (required for Thread)
-		public void run() {
-			long correctionStart, correctionEnd;	
-			double threshold = 20;
+	public void run() {
+		long correctionStart, correctionEnd;	
+		int buttonChoice = 0;
+		while (buttonChoice == 0) {
+			correctionStart = System.currentTimeMillis();
+
+			LCD.clear();
+			//UNKNOWN OBJECT WITHIN THRESHOLD
 			
-			while (true) {
-				correctionStart = System.currentTimeMillis();
-				colorSensor.fetchSample(colorData, 0);
-				
-				//UNKNOWN OBJECT WITHIN THRESHOLD
-				if (getFilteredData() < threshold){
+			if (getFilteredData() < upper_threshold){
+				if (getFilteredData() > threshold) {
+					LocalEV3.get().getTextLCD().drawString("Bring Closer", 0, 0);
+				}
 				LocalEV3.get().getTextLCD().clear();
 				LocalEV3.get().getTextLCD().drawString("OBJECT DETECTED", 3, 5);	
-				
-					//Detection of Blue Styrofoam
-					if (colorData[0]*100 < 35){
-						Sound.beep(); 	
-						LocalEV3.get().getTextLCD().drawString("BLOCK", 3, 6);
-						}
-					// OTHER OBJECT
-					else {
-						LocalEV3.get().getTextLCD().drawString("NOT BLOCK", 3, 6);
-					 
-						}
-				 
+
+				//Detection of Blue Styrofoam
+				if ( getColorID() < 9 && getColorID()>5 ){
+					Sound.beep(); 	
+					LocalEV3.get().getTextLCD().drawString("Styrofoam Block", 3, 6);
 				}
-				
-				correctionEnd = System.currentTimeMillis();
-				if (correctionEnd - correctionStart < TIME_PERIOD) {
-					try {
-						Thread.sleep(TIME_PERIOD
-								- (correctionEnd - correctionStart));
-					} catch (InterruptedException e) {
-					}
+				// OTHER OBJECT
+				else {
+					LocalEV3.get().getTextLCD().drawString("Wooden block", 3, 6);
+
+				}
+
+			}
+
+			correctionEnd = System.currentTimeMillis();
+			if (correctionEnd - correctionStart < TIME_PERIOD) {
+				try {
+					Thread.sleep(TIME_PERIOD
+							- (correctionEnd - correctionStart));
+				} 
+				catch (InterruptedException e) {
 				}
 			}
+			buttonChoice = Button.waitForAnyPress(10);
 		}
-		
-		private float getFilteredData() {
-			usSensor.fetchSample(usData, 0);
-			float distance = usData[0]*100;
-					
-			return distance;
-		}
-		
-	
+		LCD.clear();
+	}
+
+	private float getFilteredData() {
+		usSensor.fetchSample(usData, 0);
+		float distance = usData[0]*100;
+		LCD.drawString("Dist:", 0, 3);
+		LCD.drawInt((int) distance, 3, 3);
+		return distance;
+	}
+
+	private float getColorID(){
+		colorSensor.fetchSample(colorData, 0);
+		float color = colorData[0];
+		LCD.drawString("Col:", 0, 3);
+		LCD.drawInt((int) color, 3, 3);
+		return color;
+	}
+
+
 }

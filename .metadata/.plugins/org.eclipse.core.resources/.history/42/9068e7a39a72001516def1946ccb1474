@@ -1,0 +1,180 @@
+/*
+ * File: Odometer.java
+ * Written by: Sean Lawlor
+ * ECSE 211 - Design Principles and Methods, Head TA
+ * Fall 2011
+ * Ported to EV3 by: Francois Ouellet Delorme
+ * Fall 2015
+ * 
+ * Class which controls the odometer for the robot
+ * 
+ * Odometer defines cooridinate system as such...
+ * 
+ * 					90Deg:pos y-axis
+ * 							|
+ * 							|
+ * 							|
+ * 							|
+ * 180Deg:neg x-axis------------------0Deg:pos x-axis
+ * 							|
+ * 							|
+ * 							|
+ * 							|
+ * 					270Deg:neg y-axis
+ * 
+ * The odometer is initalized to 90 degrees, assuming the robot is facing up the positive y-axis
+ * 
+ */
+package ev3Localization;
+import lejos.utility.Timer;
+import lejos.utility.TimerListener;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+
+public class Odometer extends Thread {
+	// robot position
+	private double x, y, theta, leftWheelRadius, rightWheelRadius, wheelSeperation;
+	private final EV3LargeRegulatedMotor leftMotor, rightMotor;
+
+	// odometer update period, in ms
+	private static final long ODOMETER_PERIOD = 25;
+
+	// lock object for mutual exclusion
+	private Object lock;
+
+	// constructor
+	public Odometer(double leftWheelRadius, double rightWheelRadius, 
+			double wheelSeperation, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
+		x = 0.0;
+		y = 0.0;
+		theta = Math.PI/2;
+		lock = new Object();
+		this.leftWheelRadius = leftWheelRadius;
+		this.rightWheelRadius = rightWheelRadius;
+		this.wheelSeperation = wheelSeperation;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+		
+		leftMotor.resetTachoCount();
+		rightMotor.resetTachoCount();
+	}
+	
+	//previous tachometer values
+	double oldLeftTacho = 0;
+	double oldRightTacho = 0;
+
+	// run method (required for Thread)
+	public void run() {
+		long updateStart, updateEnd;
+
+		while (true) {
+			updateStart = System.currentTimeMillis();
+			
+			double leftTacho = leftMotor.getTachoCount();
+			double rightTacho = rightMotor.getTachoCount();
+			
+			double deltaLeftTacho = Math.toRadians(leftTacho - oldLeftTacho);
+			double deltaRightTacho = Math.toRadians(rightTacho - oldRightTacho);
+			
+			//calculate the arc length traveled relative to the center of the robot 
+			double deltaC = (deltaRightTacho*rightWheelRadius + deltaLeftTacho*leftWheelRadius)/2;
+			//calculate the angle relative to the (0,0) reference point
+			double deltaTheta = (deltaRightTacho*rightWheelRadius - deltaLeftTacho*leftWheelRadius)/wheelSeperation;
+
+			synchronized (lock) {
+				// don't use the variables x, y, or theta anywhere but here!
+				
+				theta += deltaTheta;
+				
+				//update the x,y value and convert them to Cartesian coordinates		
+				x += deltaC*Math.cos(theta+(deltaTheta/2));
+				y += deltaC*Math.sin(theta+(deltaTheta/2));
+			}
+			
+			oldLeftTacho = leftTacho;
+			oldRightTacho = rightTacho;
+
+			// this ensures that the odometer only runs once every period
+			updateEnd = System.currentTimeMillis();
+			if (updateEnd - updateStart < ODOMETER_PERIOD) {
+				try {
+					Thread.sleep(ODOMETER_PERIOD - (updateEnd - updateStart));
+				} catch (InterruptedException e) {
+					// there is nothing to be done here because it is not
+					// expected that the odometer will be interrupted by
+					// another thread
+				}
+			}
+		}
+	}
+
+	// accessors
+	public void getPosition(double[] position) {
+		// ensure that the values don't change while the odometer is running
+		synchronized (lock) {
+			position[0] = x;
+			position[1] = y;
+			position[2] = theta;
+		}
+	}
+
+	public double getX() {
+		double result;
+
+		synchronized (lock) {
+			result = x;
+		}
+
+		return result;
+	}
+
+	public double getY() {
+		double result;
+
+		synchronized (lock) {
+			result = y;
+		}
+
+		return result;
+	}
+
+	public double getTheta() {
+		double result;
+
+		synchronized (lock) {
+			result = theta;
+		}
+
+		return result;
+	}
+
+	// mutators
+	public void setPosition(double[] position, boolean[] update) {
+		// ensure that the values don't change while the odometer is running
+		synchronized (lock) {
+			if (update[0])
+				x = position[0];
+			if (update[1])
+				y = position[1];
+			if (update[2])
+				theta = position[2];
+		}
+	}
+
+	public void setX(double x) {
+		synchronized (lock) {
+			this.x = x;
+		}
+	}
+
+	public void setY(double y) {
+		synchronized (lock) {
+			this.y = y;
+		}
+	}
+
+	public void setTheta(double theta) {
+		synchronized (lock) {
+			this.theta = theta;
+		}
+	}
+}

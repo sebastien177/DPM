@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<qualifiedTypeNameHistroy/>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="lejos.hardware.lcd.LCD"/>
+<fullyQualifiedTypeName name="lejos.hardware.Button"/>
+<fullyQualifiedTypeName name="lejos.hardware.sensor.EV3ColorSensor"/>
+<fullyQualifiedTypeName name="org.freedesktop.DBus.Binding.TestClient"/>
+<fullyQualifiedTypeName name="ev3ObjectRecognition.Navigation"/>
+<fullyQualifiedTypeName name="lejos.utility.Delay"/>
+</qualifiedTypeNameHistroy>

@@ -7,6 +7,7 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 
 public class Scan extends Thread{
 	
@@ -41,16 +42,30 @@ public class Scan extends Thread{
 		this.usMotor = usMotor;
 	}
 	
+	public Scan (EV3LargeRegulatedMotor usMotor){
+		this.usMotor = usMotor;
+	}
+	
 	public void startRun(){
 		 isFinished = false;		
-		turn(90);
+		 Navigation nav = new Navigation(this.odo);
+		 
+//		For test		 
+		 odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
+		 turn(-45);
+		//turn(90);
+		 /*
 		leftMotor.setSpeed(FORWARD_SPEED);
 		rightMotor.setSpeed(FORWARD_SPEED);
 		leftMotor.forward();
 		rightMotor.forward();
-		
+		*/
+		//nav.travelTo(0, 60);
+		leftMotor.stop();
+		rightMotor.stop();
+		//Delay.msDelay(10000);
 		usMotor.setSpeed(80); // rotate sensor fast to be useful while moving
-		turnSensor(90); // rotate sensor counterclockwise
+		turnSensor(-90); // rotate sensor counterclockwise
 		
 		// assuming we're near our starting position, travel to 0,60
 				if (Math.abs(odo.getX() - 0) < CM_ERR
@@ -173,6 +188,9 @@ public class Scan extends Thread{
 		public boolean getIsDone() {
 			return isFinished;
 		}
-	
+		
+		public void usMotorSpeed(int speed){
+			usMotor.setSpeed(speed);
+		}
 	
 }

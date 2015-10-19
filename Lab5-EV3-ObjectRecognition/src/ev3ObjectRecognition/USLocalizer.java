@@ -2,9 +2,11 @@ package ev3ObjectRecognition;
 
 
 import lejos.*;
+import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
 public class USLocalizer {
@@ -14,25 +16,27 @@ public class USLocalizer {
 	
 	// Constant speed of the robot's rotation
 	public static double ROTATION_SPEED = 30;
-	public static double SENSOR_DISTANCE = 12.0; // Distance of the sensor from the robot's center
+	public static double SENSOR_DISTANCE = 8.0; // Distance of the sensor from the robot's center
 	private static double turnError = 1.5; 
 	private double leftRadius, rightRadius, width;
 	private double forwardSpeed, rotationSpeed;
 
 	// Declaration of class variables
 	private Odometer odo;
-	private EV3UltrasonicSensor us;
 	private LocalizationType locType;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
+	private SampleProvider usSensor;
+	private float[] usData;
 
 
-	public USLocalizer(Odometer odo, EV3UltrasonicSensor us,
+	public USLocalizer(Odometer odo, SampleProvider usSensor, float[] usData,
 			LocalizationType locType, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double wheelRadius, double width) {
 		this.odo = odo;
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
-		this.us = us;
+		this.usSensor = usSensor;
+		this.usData = usData;
 		this.locType = locType;
 		this.leftRadius= wheelRadius;
 		this.rightRadius = wheelRadius;
@@ -113,7 +117,7 @@ public class USLocalizer {
 			setRotationSpeed(0);
 
 			// Calculating the x position taking into consideration the sensor distance
-			double xPosition = (getFilteredData() + SENSOR_DISTANCE);
+			double xPosition = 2*(getFilteredData() + SENSOR_DISTANCE);
 
 			// Updating the x position of the robot after facing the wall
 			odo.setPosition(new double[] { -xPosition, 0.0, odo.getAng() },
@@ -128,7 +132,7 @@ public class USLocalizer {
 			setRotationSpeed(0);
 
 			// Calculating the y position taking into consideration the sensor distance
-			double yPosition = (getFilteredData() + SENSOR_DISTANCE);
+			double yPosition = 2*((getFilteredData() + SENSOR_DISTANCE));
 
 			
 			// Setting the final position of the robot after localizing
@@ -144,7 +148,6 @@ public class USLocalizer {
 			}
 			// Stop the robot after reaching the origin
 			setRotationSpeed(0);
-			
 			nav.travelTo(0, 0);
 			// After updating its position relative to the origin and is facing the origin, drive to a 
 			// point near the origin (here is -5.0, -4.0) to start light localization
@@ -163,7 +166,6 @@ public class USLocalizer {
 
 	// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
 	private int getFilteredData() {
-		float[] usData = new float[us.getDistanceMode().sampleSize()];
 		
 		// wait for the ping to complete
 		try {
@@ -172,10 +174,11 @@ public class USLocalizer {
 		catch (InterruptedException e) {
 			
 		}
-		us.getDistanceMode().fetchSample(usData, 0);
+		usSensor.fetchSample(usData, 0);
 		int distance = (int) (usData[0]*100);
 
 		LCD.drawInt((int) distance, 3, 3);
+		LCD.drawInt((int) SENSOR_DISTANCE, 6, 6);
 		
 		// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
 		// to be 35

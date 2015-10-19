@@ -1,0 +1,182 @@
+package lab5;
+
+/* Navigation class provided by TA's.
+ * 
+ * Lab 4: Localization
+ * 
+ * The turnTo() method was altered to use our own from Lab 3: Navigation
+ * The navigateTo() method needed to be adjusted so the robot would turn to the origin
+ * after making a turn.
+ * 
+ * File: Navigation.java
+ * 
+ * ECSE-211: Design Principles and Methods
+ * 
+ * Students: Luke Soldano & Tuan-Anh Nguyen (Group 8)
+ * 
+ * This class is responsible for navigating the robot. Making it move to a certain coordinate,
+ * setting the robot speeds
+ */
+
+
+import lejos.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+
+
+public class Navigation {
+	
+	// Declaring class variables
+
+	// Wheel_radius and Wheel_distance are needed for our turnTo() method
+	// it is part of the calculations to make it turn to the right angle
+	private static final double WHEEL_RADIUS = 2.045; 
+	private static final double WHEEL_DISTANCE = 15.4;
+	
+	// Constant speeds for the forward motions
+	final static int FAST = 200, SLOW = 175, ACCELERATION = 4000;
+	
+	// Errors for the angle deviation and the error allowed when traveling to
+	// a certain point
+	final static double DEG_ERR = 3.0, CM_ERR = 2.0, ANG_ERROR = 10.0;
+	
+	private Odometer odometer;
+	private EV3LargeRegulatedMotor leftMotor, rightMotor;
+
+	public Navigation(Odometer odo) {
+		this.odometer = odo;
+		
+		// Initializing the left and right motors to access them.
+		
+		EV3LargeRegulatedMotor[] motors = new EV3LargeRegulatedMotor[2];
+		leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+		rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+		motors[0] = leftMotor;
+		motors[1] =  rightMotor;
+
+		// set acceleration
+		this.leftMotor.setAcceleration(ACCELERATION);
+		this.rightMotor.setAcceleration(ACCELERATION);
+	}
+
+	/*
+	 * Functions to set the motor speeds jointly (Provided code by TA)
+	 */
+	public void setSpeeds(float lSpd, float rSpd) {
+		this.leftMotor.setSpeed(lSpd);
+		this.rightMotor.setSpeed(rSpd);
+		if (lSpd < 0)
+			this.leftMotor.backward();
+		else
+			this.leftMotor.forward();
+		if (rSpd < 0)
+			this.rightMotor.backward();
+		else
+			this.rightMotor.forward();
+	}
+
+	// Sets the motor speeds (Provided code by the TA)
+	public void setSpeeds(int lSpd, int rSpd) {
+		this.leftMotor.setSpeed(lSpd);
+		this.rightMotor.setSpeed(rSpd);
+		if (lSpd < 0)
+			this.leftMotor.backward();
+		else
+			this.leftMotor.forward();
+		if (rSpd < 0)
+			this.rightMotor.backward();
+		else
+			this.rightMotor.forward();
+	}
+
+	/*
+	 * Float the two motors jointly (Provided code by the TA)
+	 */
+	public void setFloat() {
+		this.leftMotor.stop();
+		this.rightMotor.stop();
+		this.leftMotor.flt(true);
+		this.rightMotor.flt(true);
+	}
+
+	/*
+	 * TravelTo function which takes as arguments the x and y position in cm Will travel to designated position, while
+	 * constantly updating it's heading
+	 */
+	public void travelTo(double x, double y) {
+
+		double minAng;
+		double correction = 0;
+		// Allowable threshold that the robot can be off by when arriving to a desired point
+		while (Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) { 
+			if((y - odometer.getY() == 0)) correction = -180;
+			minAng = 90 + correction - (Math.atan((y - odometer.getY()) / (x - odometer.getX()))) * (180.0 / Math.PI);
+			
+			if (minAng < 0){ // If there is a negative minimum angle, add 360 to make it the most efficient way to turn
+				minAng += 360.0;
+			}
+	
+			// If the robot's heading angle is not within an error of the desired angle,
+			// it will need to correct by making a turn to get back on course
+			if(Math.abs(odometer.getTheta() - minAng) > ANG_ERROR ){ 
+				
+				this.turnTo(minAng, false);
+			}
+			// After the robot is facing in the correct angle to the point, drive forward until it hits it
+			this.setSpeeds(FAST-75, FAST-75);
+			
+		}
+		
+		// The next two conditions make sure that the robot turns to the origin (0 degrees) after reaching
+		// its destination. This makes sure that the robot will be orientated as if it were at the origin
+		
+//		if(odometer.getTheta() < 180){
+//			double angle = odometer.getTheta()*(WHEEL_DISTANCE/WHEEL_RADIUS);
+//			leftMotor.rotate(-(int)(angle/2-5), true);
+//			rightMotor.rotate((int)(angle/2)-5, false);
+//		}
+//		else{
+//			double angle = (odometer.getTheta() - 180) * (WHEEL_DISTANCE/WHEEL_RADIUS);
+//			leftMotor.rotate((int)(angle/2-5), true);
+//			rightMotor.rotate(-(int)(angle/2-5), false);
+//		}
+		
+		// The robot stops after it has reached its destination
+		
+		this.setSpeeds(0, 0);
+	}
+
+	/*
+	 * The original turnTo() method was altered. We implemented our own turnTo() method from Lab 3: Navigation
+	 * The turnTo method rotates the robot at the specified angle that is passed through as an argument
+	 * It will make the most efficient turns when turning. Quickest route
+	 */
+	public void turnTo(double angle, boolean stop) {
+		
+		if(angle < 0 ){
+			
+			angle += 360;
+			
+		}
+		
+		if(angle < 180){
+			leftMotor.rotate((int)(0.5*angle*WHEEL_DISTANCE/WHEEL_RADIUS), true);
+			rightMotor.rotate(-(int)(0.5*angle*WHEEL_DISTANCE/WHEEL_RADIUS), false);
+		}
+		else{
+			angle = angle - 180;
+			leftMotor.rotate(-(int)(0.5*angle*WHEEL_DISTANCE/WHEEL_RADIUS), true);
+			rightMotor.rotate((int)(0.5*angle*WHEEL_DISTANCE/WHEEL_RADIUS), false);
+			
+		}
+			
+	}
+	
+	/*
+	 * Go forward a set distance in cm (Code provided by TA)
+	 */
+	public void goForward(double distance) {
+		this.travelTo(Math.cos(Math.toRadians(this.odometer.getTheta())) * distance, Math.cos(Math.toRadians(this.odometer.getTheta())) * distance);
+
+	}
+}

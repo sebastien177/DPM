@@ -1,0 +1,558 @@
+package lab5;
+
+/*Lab 5: Object Detection & Navigating
+ * 
+ * File: Babu.java
+ * 
+ * ECSE-211: Design Principles and Methods
+ * 
+ * Students: Luke Soldano & Tuan-Anh Nguyen (Group 8)
+ * 
+ * 
+ * The name of this class was inspired by the name of our robot: Babu.
+ * This class is responsible for navigating around the board and searching
+ * for objects to inspect and find out if it is a wooden block or blue
+ * styrofoam block. Once it finds the blue styrofoam block, it will push it
+ * to the top far right corner
+ * 
+ * Our algorithm for navigating and detecting objects is to drive along the perimeter 
+ * while keeping the ultrasonic sensor facing to the right. If the ultrasonic sensor 
+ * sees something, the robot will move to it and analyze it. The light sensor is 
+ * facing ahead of the robot to sense oncoming objects. The light sensor is very accurate
+ * and does an adequate job realizing there are objects in front of it.
+ */
+
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+
+public class Babu {
+
+	// Declaration of class variables
+	
+	private EV3UltrasonicSensor us;
+	private Odometer odo;
+	private Navigation nav;
+	private TwoWheeledRobot robot;
+	private EV3LargeRegulatedMotor sensorMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("C"));
+	private boolean styrofoam = false; // This boolean indicates whether or not a blue block has been found
+	// This boolean makes the robot move all the way down the left side of the board
+	private boolean yWallScaleFirst = true; 
+	private ObjectRecognition o;
+	private EV3ColorSensor cs;
+	private double yCollision = 0;
+	private double visitCounter = 0;
+	private boolean objectDetect = false;
+	// Threshold values
+	private static final int THRESHOLD = 6;
+	private static final int ERROR_THRESHOLD = 1;
+	private int voidCounter = 0;
+	private int colorCounter = 0;
+	// This boolean lets the robot know if there is a block in front using the light sensor
+	// so it can avoid it
+	private boolean blockFrontCase = true;
+	private float colorData[];
+
+	public Babu(EV3UltrasonicSensor ultrasonic, Odometer odometer,
+			Navigation navi, TwoWheeledRobot robo, ObjectRecognition or,
+			EV3ColorSensor color) {
+
+		// The constructor requires an ultrasonic sensor, a colour sensor,
+		// odometer, a robot type, an object detection
+		
+		us = ultrasonic;
+		odo = odometer;
+		nav = navi;
+		robot = robo;
+		o = or;
+		cs = color;
+
+	}
+
+	public void commandCenter() {
+
+		// Turn on the light sensor and move to x = -15. This is where the robot will
+		// starts its path on the searching algorithm. It will always stay at x = -15 while going up
+		// the left side of the bard
+		
+		cs.setFloodlight(true);
+		// Rotating the ultrasonic sensor to see objects to the right of it while moving up the board
+		sensorMotor.rotate(90); 
+		
+		// Moving left until x = -15 is reached
+		robot.setForwardSpeed(5);
+		nav.turnTo(-90, true);
+
+		while ((odo.getX() > -13)) {
+			robot.setForwardSpeed(5);
+		}
+
+		robot.setForwardSpeed(5);
+		nav.turnTo(90, true);
+		// Starting moving north on the left side of the board to scan for objects
+		while (!styrofoam) {
+			yWallScale(); // Go along the y-axis on the left side of the board
+		}
+
+	}
+
+	// This method is the core of the search and navigate algorithm to find the blue styrofoam
+	// block. The robot will move north while sensing to the right until it reaches y = 190 cm
+	// which is the top left corner of the board. Once it has reached this point, it has scanned
+	// the entire board. If any object is detected to the right, the robot will go to it and analyze
+	// it. THe light sensor is used to sense blocks ahead of it
+	
+	private void yWallScale() {
+
+		int n = 0;
+		
+		if (yWallScaleFirst) { 
+			n = 0;
+		}
+
+		if (!yWallScaleFirst) {
+			n = 1;
+		}
+
+		// This is the final destination of the robot while traveling along an axis
+		
+		double finalStop = 190 - 190 * n; 
+
+		// Traveling all the way down the left axis of the board
+		while (Math.pow(-1, n) * odo.getY() < finalStop) { 
+
+			robot.setForwardSpeed(5);
+
+			// This detects any oncoming objects in front of the robot.
+			// It will only start sensing after it has traveled 3 blocks
+			// because there cannot be any blocks within the first 3 blocks
+			// due to the robot having to localize. If the light value is above 200
+			// there is an object present in front of the robot
+			
+			if (getColor() >= 20	&& ((odo.getY() > 45) && (colorCounter == 0))) {
+				
+				// Incrementing the colorCounter by 1 makes sure the same object is not
+				// analyzed twice after doing it once
+				colorCounter++;
+				
+				// Stop the robot and prepare to analyze the object since an object
+				// is near in front of the robot
+				robot.setForwardSpeed(0);
+				
+				// If the reognize() method returns true, the object is a blue styrofoam
+				// block and it will be pushed to the top right corner
+				
+				if (o.recognize()) { 
+					styrofoam = true;
+					push(); // Pushes the block to the top right corner of the board
+				}
+
+				else { // The object is a wooden block and it must be avoided 
+					avoidance();
+				}
+
+			}
+
+			// Robot senses an object to the right as it is driving up the wall.
+			// US sensor is facing to the right of the robot
+			// with the light sensor facing straight in front (north) of the robot
+			
+			if (us.getDistance() < 90 && odo.getY() > 50) {
+				
+				// Sleep so the robot can move up a bit to face the block in the
+				// middle since the us sensor always sees the block early
+				
+				// The voidCounter is to make sure that the robot sleeps only once
+				// after detecting an object
+				if (visitCounter == 0) { 
+					
+					try {
+						Thread.sleep(2500);
+					} 
+					
+					catch (Exception e) {
+						
+					}
+				}
+
+				// This is where the robot sees something to the right of it and will travel to it
+				// The visitCounter ensures that the robot will not travel to the same object
+				// after analyzing it
+				
+				if (visitCounter == 0) {
+					visitCounter = 1;
+					robot.setForwardSpeed(8);
+					nav.turnTo(90 + 180 * n, true); // Turn towards the object then move to it
+					sensorMotor.rotate(-90);
+
+					// Once the robot has traveled a certain distance,
+					// it will begin its object recognition. It will slow down
+					// start detecting
+					if (o.recognize()) {
+					
+						styrofoam = true;
+						robot.setForwardSpeed(5);
+						push();
+						
+						// The following is for correction in heading angle
+						// as the robot detects a blue block and is moving 
+						// towards the top right corner
+						
+						robot.setForwardSpeed(5);
+						
+						if (odo.getTheta() < 30) {
+							nav.turnTo(30, true);
+						} else {
+							nav.turnTo(-50, true);
+						}
+						
+						// Terminate the entire program once it reaches the final destination
+						robot.setForwardSpeed(0);
+						System.exit(0);
+						
+					} else {
+						// The object on the right is a wooden block so reverse to
+						// the position where it sensed the block (x = -15)
+						
+						robot.setForwardSpeed(-5);
+						while ((odo.getX() > -13 && n == 0)
+								|| (odo.getX() < 75 && n == 1)) {
+							robot.setForwardSpeed(-5);
+						}
+						
+						// Turn to proper orientation and continue moving north
+						nav.turnTo(-90 * Math.pow(-1, n), true);
+						sensorMotor.rotate(90);
+						robot.setForwardSpeed(5);
+
+					}
+				}
+
+			}
+			visitCounter = 0; // Reset search counter for other upcoming objects on the right
+		}
+
+		// The robot has traveled the entire left axis and has scanned the whole board
+		yWallScaleFirst = !yWallScaleFirst;
+
+	}
+
+	private void xWallScale() {
+
+		// In our initial algorithm design, this would be used to go along the x-axis after
+		// completing its path on left side of the board. This would not be necessary for the demo
+		// since the robot was able to sense all the blocks along its path on the left side 
+		// staying at x = -15
+			
+	}
+
+	// This method is responsible for avoiding all wooden blocks. The robot will always go right of the
+	// block while having the ultrasonic sensor facing the block then making the appropriate turn when
+	// after a certain counter that is long enough to clear the side of the block
+	
+	private void avoidance() {
+
+		yCollision = odo.getY();
+
+		// The block sees a wooden block in front and backs up a bit to get space to operate
+		while (odo.getY() >= yCollision - 15 && !objectDetect) {
+
+			robot.setForwardSpeed(-4);
+
+			if (us.getDistance() <= 25) {
+
+				objectDetect = true;
+			}
+
+		}
+
+		robot.setForwardSpeed(0);
+
+		robot.setForwardSpeed(5);
+		
+		while (odo.getY() <= yCollision - 2) {
+			robot.setForwardSpeed(5);
+		}
+		robot.setForwardSpeed(0);
+		robot.setForwardSpeed(5);
+
+		nav.turnTo(90, true);
+		sensorMotor.rotate(-180);
+
+		// Moving right of the block
+		
+		while (voidCounter < 35) {
+			
+			// If there is a block in front of the robot (sensed by the light sensor since
+			// the ultrasonic sensor is facing perpendicular to the block which is to be\
+			// avoided), the robot will move right and go around it
+			
+			// Avoid the block in front by turning right, going along the face of the wall,
+			// then turn left, go up straight, then turn left again so that the block has
+			// been avoided. Going around the perimeter of the block. The ultrasonic sensor
+			// is always facing the block that is being avoided.
+			
+			if (cs.getNormalizedLightValue() >= 280) {
+				
+				voidCounter = 0;
+				nav.turnTo(90, true);
+				blockFrontCase = false;
+				robot.setForwardSpeed(5);
+				
+				// Counter to move the robot along the side of the block
+				while (voidCounter < 35) {
+
+					robot.setForwardSpeed(5);
+					// Robot needs to turn right
+					while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)	&& (us.getDistance() < 10)) {
+
+						robot.setSpeeds(3, 5);
+
+					}
+					// Robot needs to turn left
+					while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+
+						robot.setSpeeds(6, 3);
+					}
+					
+					// Update voidCounter when the robot sees greater than 15
+					if (us.getDistance() >= 15) {
+
+						voidCounter++;
+
+					}
+
+				}
+				
+				// The robot has gotten around a block's corner and needs continues along the side
+				// of the block. Turn then keep moving
+				
+				nav.turnTo(-90, true);
+				voidCounter = 0;
+				robot.setForwardSpeed(5);
+				
+				// This counter is to move along one side of the block
+				while (voidCounter < 55) {
+
+					robot.setForwardSpeed(5);
+					
+					// Robot needs to turn right
+					while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)
+							&& (us.getDistance() < 10)) {
+
+						robot.setSpeeds(3, 5);
+
+					}
+					
+					// Robot needs to turn left
+					while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+
+						robot.setSpeeds(6, 3);
+					}
+
+					// Update voidCounter as the robot travels along a side of the block
+					if (us.getDistance() >= 15) {
+
+						voidCounter++;
+
+					}
+
+				}
+				
+				// The robot has gotten around a block's corner and needs continues along the side
+				// of the block. Turn then keep moving
+				
+				
+				nav.turnTo(-90, true);
+				robot.setForwardSpeed(5);
+				voidCounter = 0;
+
+				
+				// This counter is to move along one side of the block
+				while (voidCounter < 55) {
+					
+					robot.setForwardSpeed(5);
+					
+					// Robot needs to turn right
+					while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)	&& (us.getDistance() < 10)) {
+
+						robot.setSpeeds(3, 5);
+
+					}
+					
+					// Robot needs to turn left
+					while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+
+						robot.setSpeeds(6, 3);
+					}
+					
+					// Update voidCounter as the robot travels along a side of the block
+					
+					if (us.getDistance() >= 15) {
+
+						voidCounter++;
+
+					}
+
+				}
+
+			}
+
+			// At this point, there is no other block in front of the robot while it is avoiding
+			// a block it saw before
+			robot.setForwardSpeed(5);
+			
+			// The robot will adjust/turn if it has to 
+			while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD && blockFrontCase)
+					&& (us.getDistance() < 15)) {
+
+				robot.setSpeeds(3, 5);
+
+			}
+			while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD
+					&& blockFrontCase) {
+
+				robot.setSpeeds(6, 3);
+			}
+			// Updating the counter as the robot moves along the side of the wall
+			if (us.getDistance() >= 15 && blockFrontCase) {
+
+				voidCounter++;
+
+			}
+		}
+		
+		if (blockFrontCase) {
+			nav.turnTo(-90, true);
+			voidCounter = 0;
+		}
+
+		while (voidCounter < 48 && blockFrontCase) {
+			
+			// if there is a block in front of the robot while it is going up on
+			// object avoidance
+			
+			if (cs.getNormalizedLightValue() >= 280) { 
+				
+				// Avoid the block in front by turning right, going along the face of the wall,
+				// then turn left, go up straight, then turn left again so that the block has
+				// been avoided. Going around the perimeter of the block. The ultrasonic sensor
+				// is always facing the block that is being avoided.
+				
+				robot.setForwardSpeed(5);
+				nav.turnTo(90, true);
+
+				// This counter is to move along one side of the block
+				while (voidCounter < 45) {
+					
+					robot.setForwardSpeed(5);
+					
+					// The robot will adjust/turn if it has to 
+					while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)	&& (us.getDistance() < 10)) {
+						robot.setSpeeds(3, 5);
+
+					}
+					while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+						robot.setSpeeds(6, 3);
+					}
+					// Updating the counter as the robot moves along the side of the wall
+					if (us.getDistance() >= 10) {
+						voidCounter++;
+					}
+				}
+				
+				// The robot has just gotten around a corner so reset voidCounter
+				// and turn to get around another corner of the wall
+				
+				voidCounter = 0;
+				nav.turnTo(-90, true);
+				
+				// This counter is to move along one side of the block
+				while (voidCounter < 35) {
+
+					robot.setForwardSpeed(5);
+					// The robot will adjust/turn if it has to 
+					while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)	&& (us.getDistance() < 10)) {
+						robot.setSpeeds(3, 5);
+
+					}
+					while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+						robot.setSpeeds(6, 3);
+					}
+
+					// Updating the counter as the robot moves along the side of the wall
+					if (us.getDistance() >= 15) {
+						voidCounter++;
+					}
+
+				}
+				
+			}
+
+			robot.setForwardSpeed(5);
+			
+			// The robot needs to turn one more corner until it has cleared the block
+			
+			// The robot will adjust/turn if it has to 
+			while ((us.getDistance() - THRESHOLD > ERROR_THRESHOLD)	&& (us.getDistance() < 10)) {
+				robot.setSpeeds(3, 5);
+			}
+			while (us.getDistance() - THRESHOLD < -1 * ERROR_THRESHOLD) {
+				robot.setSpeeds(6, 3);
+			}
+			// Updating the counter as the robot moves along the side of the wall to clear it
+			if (us.getDistance() >= 15) {
+				voidCounter++;
+			}
+
+		}
+		
+		// Robot has avoided all blocks in its path/avoidance path 
+		// and is ready to move to the left and go to x = -15
+		// Any blocks in front of it and any blocks encountered while avoiding the first sensed block
+		// will be and are avoided by this point.
+		
+		// The robot then makes its way back to x = -15 so that it can continue with its
+		// search and navigate algorithm
+		
+		nav.turnTo(-90, true);
+		voidCounter = 0;
+
+		while (odo.getX() >= -10) {
+			robot.setForwardSpeed(5);
+		}
+		
+		// Once it has reached its point on the left axis (to continue its path on the algorithm)
+		// it will re-orient itself north and rotate the ultrasonic sensor to so that it faces
+		// perpendicular to the robot
+		
+		nav.turnTo(90, true);
+		sensorMotor.rotate(180);
+	}
+	
+	// This method is responsible for pushing the blue styrofoam block to its final destiation
+	// Once it detects the blue block, it will turn to the correct angle and drive to the point
+	
+	private void push(){
+		
+		nav.turnTo(-45, true);
+		while (odo.getX() <= 75 || odo.getY() <= 190) {
+			robot.setForwardSpeed(5);
+		}
+		robot.setForwardSpeed(0);
+		System.exit(0);
+	}
+	
+	private int getColor(){
+		cs.fetchSample(colorData, 0);
+		return (int)(colorData[0]*100);
+	}
+	
+	private int getDistance(){
+		usSensor.fetchSample(usData, 0);
+		float distance = usData[0]*100;
+		return (int)distance;
+	}
+
+}

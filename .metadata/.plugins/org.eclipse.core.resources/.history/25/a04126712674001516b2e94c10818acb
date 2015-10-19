@@ -1,0 +1,110 @@
+package lab5;
+
+/*Lab 5: Object Detection & Navigating
+ * 
+ * File: ObjectRecognitionr.java
+ * 
+ * ECSE-211: Design Principles and Methods
+ * 
+ * Students: Luke Soldano & Tuan-Anh Nguyen (Group 8)
+ * 
+ * 
+ * The ObjectRecognition is a class that determines if an object is a wooden block
+ * or blue styrofoam depending on the data received from the light sensor
+ * 
+ */
+
+
+
+import lejos.hardware.Sound;
+import lejos.hardware.lcd.LCD;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.robotics.Color;
+
+public class ObjectRecognition { 
+	
+	// Declaration of class variables
+
+	private EV3UltrasonicSensor ultrasonic;
+	private EV3ColorSensor color;
+	private TwoWheeledRobot robot;
+	private float[] colorData;
+
+	public ObjectRecognition(EV3UltrasonicSensor sensor, EV3ColorSensor colorSensor,
+			TwoWheeledRobot robo) {
+
+		// The constructor for objectRecognitino object will take an ultrasonic sensor, color sensor,
+		// and a robot type
+		
+		ultrasonic = sensor;
+		color = colorSensor;
+		robot = robo;
+		
+		// The color of the light sensor will be set to red until an object is sensed
+		// (value > 280) then it will be turned to blue
+		
+		color.setFloodlight(true);
+
+	}
+
+	// The recognize() method returns true if the object is a blue block
+	public boolean recognize() {
+		
+		// Boolean that determines whether or not to start detecting what kind of object is in front
+		boolean isRecognizing = true;
+
+		while (isRecognizing) { 
+
+			
+			// The robot will drive slowly if the light reads under 300, which means an object is closeby
+			while (color.getNormalizedLightValue() < 300) { 
+				robot.setForwardSpeed(2);
+
+			}
+			
+			// When the robot is close enough to the object, it will stop then turn on its
+			// blue light which gives two noticeable different light values for a wooden and blue
+			// block
+			
+			robot.setForwardSpeed(0);
+			color.setFloodlight(Color.BLUE);
+
+	
+			// If the light value of blue reads over 250, it is a blue block
+			if (getColor() >= 25) { 
+										
+				Sound.beep();
+				LCD.drawString("Blue styrofoam block", 3, 5);
+				
+				// Turn the default light back on after analyzing an object
+				color.setFloodlight(true); 
+				
+				return true;
+				
+			} else { // If it is not a blue block, it is a wooden block
+						
+				Sound.buzz();
+				LCD.drawString("Wooden block", 3, 5);
+				
+				// Turn the default light back on after analyzing an object
+				color.setFloodlight(true);
+
+			}
+			
+			// Set the boolean to false to break out of the while loop and stop analyzing the object
+			isRecognizing = false;
+
+		}
+		
+		// Default return value. It should never get here but JAVA requires a return type
+		return false;
+
+	}
+	
+	private int getColor(){
+		color.fetchSample(colorData, 0);
+		return (int)(colorData[0]*100);
+	}
+
+}
