@@ -7,13 +7,15 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 
 
 public class BlockRecognition extends Thread {
 	public final Object lock = new Object(); // for blocking method
 	private static final int TIME_PERIOD = 20;
-	private static final int FORWARD_SPEED = 150;
-	private static final int STOP_DISTANCE = 7; // how far from block to stop
+	private static final int FORWARD_SPEED = 100;
+	private static final int ROTATE_SPEED = 100;
+	private static final int STOP_DISTANCE = 4; // how far from block to stop
 	private static final double RIGHT_RADIUS = 2.1;
 	private static final double LEFT_RADIUS = 2.1;
 	private static final double WIDTH = 15.6;
@@ -26,9 +28,11 @@ public class BlockRecognition extends Thread {
 	private SampleProvider colorSensor;
 	private float[] colorData;
 	private float[] usData;
+	private int styrofoamColor[] = new int[] {5,9};
 	private EV3LargeRegulatedMotor rightMotor;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor usMotor;
+	Navigation nav;
 
 	private int redValue, blueValue; // color readings
 
@@ -36,6 +40,7 @@ public class BlockRecognition extends Thread {
 
 	int[] distanceArray = new int[5];
 	int[] sortedArray = new int[5];
+	private boolean finisheMOFO = false;
 	
 	public BlockRecognition(Odometer odo, SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData,
 			EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor leftMotor){
@@ -46,6 +51,7 @@ public class BlockRecognition extends Thread {
 		this.colorData = colorData;	
 		this.rightMotor = rightMotor;
 		this.leftMotor = leftMotor;
+		nav = new Navigation(odo);
 		}
 	
 	public void startRun(){
@@ -55,6 +61,9 @@ public class BlockRecognition extends Thread {
 		double xInit = odo.getX(); // initial x position
 		double yInit = odo.getY(); // initial y position
 		
+		leftMotor.forward();
+		rightMotor.forward();
+		
 		while (true){
 			timeStart = System.currentTimeMillis();
 
@@ -63,6 +72,7 @@ public class BlockRecognition extends Thread {
 			// stop if close to a block
 			if (getFilteredData() <= STOP_DISTANCE) {
 				Stop();
+				Delay.msDelay(500);
 				setBlockType(); // determine block type
 
 				if (isStyro) {
@@ -72,7 +82,7 @@ public class BlockRecognition extends Thread {
 				}
 
 			} else {
-				goForward();
+				//goForward();
 				isCinder = false;
 				isStyro = false;
 			}
@@ -88,27 +98,19 @@ public class BlockRecognition extends Thread {
 				}
 			}
 		}
-		
+		/*
 		while (isNotThereYet(xInit, yInit)) {
 			goBackward();
 		}
+		*/
 
-		Stop();
+		nav.travelBackwardTo(xInit, yInit);
+		//Stop();
 		isFinished = true;
 		return;
-		
-		
 	}
 	
 	// accessors
-		public int getBlue() {
-			return blueValue;
-		}
-
-		public int getRed() {
-			return redValue;
-		}
-
 		public boolean getIsStyro() {
 			return isStyro;
 		}
@@ -119,16 +121,15 @@ public class BlockRecognition extends Thread {
 
 		// determines the type of a block through the use of color ratios
 		public void setBlockType() {
-			float[] sampleRed = {0};
 			colorSensor.fetchSample(colorData, 0);
 			float lightValue = colorData[0]*100;
 
-			if (lightValue > 1.8) {
-				isStyro = false;
-				isCinder = true;
-			} else {
-				isCinder = false;
+			if (lightValue > styrofoamColor[0] && lightValue < styrofoamColor[1] ) {
 				isStyro = true;
+				isCinder = false;
+			} else {
+				isCinder = true;
+				isStyro = false;
 			}
 		}
 
@@ -167,9 +168,7 @@ public class BlockRecognition extends Thread {
 
 			// goes forward indefinitely as we didn't implement a method of
 			// travelling to corner properly
-			while (true) {
-				goForward();
-			}
+			nav.travelTo(60, 60);
 		}
 
 		// travels a specific distance
@@ -182,6 +181,8 @@ public class BlockRecognition extends Thread {
 
 		// turns the robot
 		public void turn(double angle) {
+			leftMotor.setSpeed(ROTATE_SPEED);
+			rightMotor.setSpeed(ROTATE_SPEED);
 			leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, angle), true);
 			rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, angle), false);
 		}
@@ -212,6 +213,10 @@ public class BlockRecognition extends Thread {
 		float distance = usData[0]*100;
 				
 		return distance;
+	}
+	
+	public boolean finishedMOFO(){
+		return finisheMOFO;
 	}
 
 }

@@ -21,6 +21,7 @@ public class ObjectDetection extends Thread{
 	private static final long TIME_PERIOD = 10;
 	private double threshold = 4;
 	private double upper_threshold = 20;
+	private int styrofoamColor[] = new int[] {5,9};
 
 
 	// constructor
@@ -49,7 +50,7 @@ public class ObjectDetection extends Thread{
 				LocalEV3.get().getTextLCD().drawString("OBJECT DETECTED", 3, 5);	
 
 				//Detection of Blue Styrofoam
-				if ( getColorID() < 9 && getColorID()>5 ){
+				if ( getColorID() < styrofoamColor[1] && getColorID()>styrofoamColor[0] ){
 					Sound.beep(); 	
 					LocalEV3.get().getTextLCD().drawString("Styrofoam Block", 3, 6);
 				}

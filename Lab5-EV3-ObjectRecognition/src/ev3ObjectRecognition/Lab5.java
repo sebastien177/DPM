@@ -96,31 +96,40 @@ public class Lab5 {
 			}
 			buttonChoice = Button.waitForAnyPress();
 		}
-		
+
 		if (buttonChoice == Button.ID_ESCAPE){
 			System.exit(0);
 		}
 		odo.start();
 		/*		USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
-		 */		Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
-		 BlockRecognition br = new BlockRecognition(odo,  usSensor,  usData,  colorSensor,colorData, rightMotor, leftMotor);
+		 */		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
+		 final BlockRecognition br = new BlockRecognition(odo,  usSensor,  usData,  colorSensor,colorData, rightMotor, leftMotor);
 
 		 new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
 		 /*
 		usl.doLocalization();
 		  */		// begin the threads
-		 scan.start();
-		 br.start();
+		 (new Thread() {
+			 public void run() {
 
-		 while (true) {
-			 scan.startRun();
+				 scan.start();
+				 br.start();
 
-			 // if a scanning routine needs to perform block detection
-			 if (scan.getIsDone()) {
-				 br.startRun();
+				 while (true) {
+					 scan.startRun();
+
+					 // if a scanning routine needs to perform block detection
+					 if (scan.getIsDone()) {
+						 br.startRun();
+					 }
+					 if(br.finishedMOFO()){
+						 break;
+					 }
+				 }
+
 			 }
-		 }
+		 }).start();
+		 while (Button.waitForAnyPress() != Button.ID_ESCAPE);
+		 System.exit(0);
 	}
-
-
 }

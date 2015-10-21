@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/Lab4-EV3-Localization/src/ev3Localization/test.java"/>
+<listEntry value="/Lab2-EV3-Odometer/src/ev3Odometer/Test.java"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
 </listAttribute>
-<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="ev3Localization.test"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Lab4-EV3-Localization"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="ev3Odometer.Test"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Lab2-EV3-Odometer"/>
 </launchConfiguration>

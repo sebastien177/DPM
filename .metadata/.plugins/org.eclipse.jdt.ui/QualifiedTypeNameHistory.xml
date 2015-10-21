@@ -5,5 +5,10 @@
 <fullyQualifiedTypeName name="lejos.hardware.sensor.EV3ColorSensor"/>
 <fullyQualifiedTypeName name="org.freedesktop.DBus.Binding.TestClient"/>
 <fullyQualifiedTypeName name="ev3ObjectRecognition.Navigation"/>
+<fullyQualifiedTypeName name="lejos.hardware.Sound"/>
+<fullyQualifiedTypeName name="java.lang.Error"/>
+<fullyQualifiedTypeName name="java.lang.ThreadDeath"/>
+<fullyQualifiedTypeName name="java.lang.ExceptionInInitializerError"/>
+<fullyQualifiedTypeName name="java.lang.Exception"/>
 <fullyQualifiedTypeName name="lejos.utility.Delay"/>
 </qualifiedTypeNameHistroy>

@@ -1,5 +1,5 @@
 package ev3ObjectRecognition;
-
+//12h33 pour le save original
 import lejos.hardware.*;
 import java.util.Arrays;
 import lejos.hardware.ev3.LocalEV3;
@@ -10,7 +10,7 @@ import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
 public class Scan extends Thread{
-	
+
 	private SampleProvider usSensor;
 	private SampleProvider colorSensor;
 	private float[] colorData;
@@ -30,7 +30,10 @@ public class Scan extends Thread{
 	boolean isFinished;
 	private float[] usData;
 	private static final int TIME_PERIOD = 20;
-	
+	private boolean done = false;
+	private boolean isObject = false;
+	private boolean coordinateNotReached = true;
+
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
 		this.usSensor = usSensor;
 		this.usData = usData;
@@ -41,34 +44,57 @@ public class Scan extends Thread{
 		this.rightMotor = rightMotor;
 		this.usMotor = usMotor;
 	}
-	
+
 	public Scan (EV3LargeRegulatedMotor usMotor){
 		this.usMotor = usMotor;
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public void startRun(){
-		 isFinished = false;		
-		 Navigation nav = new Navigation(this.odo);
-		 
-//		For test		 
-		 odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
-		 turn(-45);
-		//turn(90);
-		 /*
+		isFinished = false;		
+		final Navigation nav = new Navigation(this.odo);
+
+
+		odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
+		turn(-45);
+		//			For test	
+
+		/*
 		leftMotor.setSpeed(FORWARD_SPEED);
 		rightMotor.setSpeed(FORWARD_SPEED);
 		leftMotor.forward();
 		rightMotor.forward();
-		*/
+		 */
 		//nav.travelTo(0, 60);
+
+		// nav.travelTo(0, 30);
+
+		/* 
+		 Thread caca = (new Thread() {
+				public void run() {
+					nav.travelTo(0, 30);
+				}
+			});
+		 caca.start();
+
+		 Sound.beep();
+		 Delay.msDelay(1000);
+		 caca.interrupt();
+		 Sound.beep();
+		 caca.resume();
 		leftMotor.stop();
 		rightMotor.stop();
+		Sound.beep();
 		//Delay.msDelay(10000);
-		usMotor.setSpeed(80); // rotate sensor fast to be useful while moving
+		 */
+
+		usMotor.setSpeed(70); // rotate sensor fast to be useful while moving
 		turnSensor(-90); // rotate sensor counterclockwise
-		
+
 		// assuming we're near our starting position, travel to 0,60
-				if (Math.abs(odo.getX() - 0) < CM_ERR
+
+		/* 
+		 if (Math.abs(odo.getX() - 0) < CM_ERR
 						&& Math.abs(odo.getY() - 60) > CM_ERR) {
 					travelTo(0, 60);
 
@@ -79,7 +105,7 @@ public class Scan extends Thread{
 
 					turn(90); // turn CCW
 				}
-				
+
 				else if (Math.abs(odo.getX() - 180) > CM_ERR
 						&& Math.abs(odo.getY() - 60) < CM_ERR) {
 					travelTo(180, 60);
@@ -95,10 +121,154 @@ public class Scan extends Thread{
 				else {
 					isFinished = true;
 				}
+		 */
 
-		
+		//To know if we reached the first coordinate yet
+		while (coordinateNotReached){
+
+			Thread caca = (new Thread() {
+				public void run() {
+					nav.travelTo(0, 60);
+				}
+			});
+			caca.start();
+
+			while (!nav.isDone()){
+
+				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
+				if (nav.isDone()){
+					coordinateNotReached = false;
+				}
+
+				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
+				if (getFilteredData()< 30) {
+					//		try{
+					caca.interrupt();
+					//caca.wait();
+					//caca.stop();
+					//		}
+					/*		catch (ThreadDeath E){
+					//cuz we dont care
+					//System.out.println(E);
+				}
+				catch (Error E){
+
+				}
+				catch (Exception A){
+
+				}*/
+					isObject = true;
+				}
+			}
+			nav.setNotDone();
+
+			/*If it was an object, turn the robot and the sensor toward the object and
+			 * set isFinished to start the BlockRecognition class from the main 
+			 */
+			if (isObject) {
+				//lancer une methode
+
+				/*leftMotor.stop();
+			rightMotor.stop();*/
+				usMotor.setSpeed(25);
+				turnSensor(90);
+				turn(90);
+				isFinished = true;
+			}
+			isFinished = false;
+			//Si les deux classes run en meme temps, use synchronized(lock)
+			Sound.beepSequenceUp();
+			if(isObject){
+				turn(-90); // turn CCW
+				turnSensor(-90);
+				nav.goForward(5);
+			}
+		}
+
+		//Object was not found, go to next coordinate
+		coordinateNotReached = true;
+		while (coordinateNotReached){
+
+			Thread caca = (new Thread() {
+				public void run() {
+					nav.travelTo(60, 60);
+				}
+			});
+			caca.start();
+
+			while (!nav.isDone()){
+
+				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
+				if (nav.isDone()){
+					coordinateNotReached = false;
+				}
+
+				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
+				if (getFilteredData()< 30) {
+					//		try{
+					caca.interrupt();
+					//caca.wait();
+					//caca.stop();
+					//		}
+					/*		catch (ThreadDeath E){
+						//cuz we dont care
+						//System.out.println(E);
+					}
+					catch (Error E){
+
+					}
+					catch (Exception A){
+
+					}*/
+					isObject = true;
+				}
+			}
+			nav.setNotDone();
+
+			/*If it was an object, turn the robot and the sensor toward the object and
+			 * set isFinished to start the BlockRecognition class from the main 
+			 */
+			if (isObject) {
+				//lancer une methode
+
+				/*leftMotor.stop();
+				rightMotor.stop();*/
+				usMotor.setSpeed(25);
+				turnSensor(90);
+				turn(90);
+				//This will start a new Thread in main
+				isFinished = true;
+			}
+			isFinished = false;
+			//Si les deux classes run en meme temps, use synchronized(lock)
+
+			if(isObject){
+				turn(-90); // turn CCW
+				turnSensor(-90);
+				nav.goForward(5);
+			}
+			Sound.beepSequenceUp();
+
+		}
+
+
+		if (Math.abs(odo.getX() - 180) > CM_ERR
+				&& Math.abs(odo.getY() - 60) < CM_ERR) {
+			travelTo(180, 60);
+
+			if (isNotThereYet(60, 180)) {
+				isFinished = true;
+				return;
+			}
+
+			turn(90); // turn CCW
+		}
+
+		else {
+			isFinished = true;
+		}
 	}
-	
+
 	public void travelTo(double x, double y) {
 		boolean isObject = false;
 
@@ -142,55 +312,58 @@ public class Scan extends Thread{
 		}
 
 	}
-	
-		
+
+
 
 	// determines if robot is near target
-		public boolean isNotThereYet(double x, double y) {
-			return Math.abs(x - odo.getX()) > CM_ERR
-					|| Math.abs(y - odo.getY()) > CM_ERR;
-		}
+	public boolean isNotThereYet(double x, double y) {
+		return Math.abs(x - odo.getX()) > CM_ERR
+				|| Math.abs(y - odo.getY()) > CM_ERR;
+	}
 
-		// turns the robot by a specified angle
-		public void turnSensor(int degrees) {
-			usMotor.rotate(degrees);
-		}
+	// turns the robot by a specified angle
+	public void turnSensor(int degrees) {
+		usMotor.rotate(degrees);
+	}
 
-		// turns the robot by a specified angle
-		public void turn(double angle) {
-			leftMotor.setSpeed(ROTATE_SPEED);
-			rightMotor.setSpeed(ROTATE_SPEED);
+	// turns the robot by a specified angle
+	public void turn(double angle) {
+		leftMotor.setSpeed(ROTATE_SPEED);
+		rightMotor.setSpeed(ROTATE_SPEED);
 
-			leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, angle), true);
-			rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, angle), false);
-		}
+		leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, angle), true);
+		rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, angle), false);
+	}
 
-		// helper method to convert the distance each wheel must travel
-		private static int convertDistance(double radius, double distance) {
-			return (int) ((180.0 * distance) / (Math.PI * radius));
-		}
+	// helper method to convert the distance each wheel must travel
+	private static int convertDistance(double radius, double distance) {
+		return (int) ((180.0 * distance) / (Math.PI * radius));
+	}
 
-		// helper method to convert the angle each motor must rotate
-		private static int convertAngle(double radius, double width, double angle) {
-			return convertDistance(radius, Math.PI * width * angle / 360.0);
-		}
-		
+	// helper method to convert the angle each motor must rotate
+	private static int convertAngle(double radius, double width, double angle) {
+		return convertDistance(radius, Math.PI * width * angle / 360.0);
+	}
 
 
-		
-		private float getFilteredData() {
-			usSensor.fetchSample(usData, 0);
-			float distance = usData[0]*100;
-					
-			return distance;
-		}
 
-		public boolean getIsDone() {
-			return isFinished;
-		}
-		
-		public void usMotorSpeed(int speed){
-			usMotor.setSpeed(speed);
-		}
-	
+
+	private float getFilteredData() {
+		usSensor.fetchSample(usData, 0);
+		float distance = usData[0]*100;
+
+		return distance;
+	}
+
+	public boolean getIsDone() {
+		return isFinished;
+	}
+
+	public void usMotorSpeed(int speed){
+		usMotor.setSpeed(speed);
+	}
+	public boolean coordinateReached(){
+		return coordinateNotReached ;
+	}
+
 }

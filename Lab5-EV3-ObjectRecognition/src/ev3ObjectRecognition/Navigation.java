@@ -16,6 +16,7 @@ public class Navigation extends Thread {
 	final static double DEG_ERR = 3.0, CM_ERR = 1.0;
 	private Odometer odometer;
 	private EV3LargeRegulatedMotor leftMotor, rightMotor;
+	private boolean isDone = false;
 
 	public Navigation(Odometer odo) {
 		this.odometer = odo;
@@ -73,8 +74,9 @@ public class Navigation extends Thread {
 	 * constantly updating it's heading
 	 */
 	public void travelTo(double x, double y) {
+		isDone  = false;
 		double minAng;
-		while (Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) {
+		while (Thread.currentThread().isInterrupted() || Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) {
 			minAng = (Math.atan2(y - odometer.getY(), x - odometer.getX())) * (180.0 / Math.PI);
 			if (minAng < 0)
 				minAng += 360.0;
@@ -82,6 +84,21 @@ public class Navigation extends Thread {
 			this.setSpeeds(FAST, FAST);
 		}
 		this.setSpeeds(0, 0);
+		isDone = true;
+	}
+	
+	public void travelBackwardTo(double x, double y) {
+		isDone  = false;
+		double minAng;
+		while (Thread.currentThread().isInterrupted() || Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) {
+			minAng = (Math.atan2(y - odometer.getY(), x - odometer.getX())) * (180.0 / Math.PI);
+			if (minAng < 0)
+				minAng += 360.0;
+			this.turnTo(-minAng, false);
+			this.setSpeeds(-FAST, -FAST);
+		}
+		this.setSpeeds(0, 0);
+		isDone = true;
 	}
 
 	/*
@@ -128,4 +145,12 @@ public class Navigation extends Thread {
 	public static int convertAngle(double radius, double width, double angle) {
 		return convertDistance(radius, Math.PI * width * angle / 360.0);
 	}
+	
+	public boolean isDone(){
+	return isDone;
+	}
+	
+	public void setNotDone(){
+		isDone = false;
+		}
 }
