@@ -30,9 +30,12 @@ public class Scan extends Thread{
 	boolean isFinished;
 	private float[] usData;
 	private static final int TIME_PERIOD = 20;
-	private boolean done = false;
 	private boolean isObject = false;
 	private boolean coordinateNotReached = true;
+	private boolean isDone = false;
+	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
+	private boolean interruption = true;
+	final static double DEG_ERR = 3.0;
 
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
 		this.usSensor = usSensor;
@@ -53,7 +56,7 @@ public class Scan extends Thread{
 	public void startRun(){
 		isFinished = false;		
 		final Navigation nav = new Navigation(this.odo);
-
+		final Navigation nav2 = new Navigation(this.odo);
 
 		odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
 		turn(-45);
@@ -125,25 +128,29 @@ public class Scan extends Thread{
 
 		//To know if we reached the first coordinate yet
 		while (coordinateNotReached){
-
-			Thread caca = (new Thread() {
-				public void run() {
-					nav.travelTo(0, 60);
-				}
-			});
-			caca.start();
-
-			while (!nav.isDone()){
+	
+			while (!isDone){
+				travelTo(0, 60);
 
 				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
-				if (nav.isDone()){
+				if (isDone){
 					coordinateNotReached = false;
 				}
 
 				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
 				if (getFilteredData()< 30) {
+					FAST=30;
+					while (getFilteredData()<40){
+						travelTo(0,60);
+					}
+					setSpeeds(0, 0);
+					FAST=150;
+					isDone=true;
+					
+					
+					//nav.goBackward();
 					//		try{
-					caca.interrupt();
+					//caca.interrupt();
 					//caca.wait();
 					//caca.stop();
 					//		}
@@ -160,7 +167,7 @@ public class Scan extends Thread{
 					isObject = true;
 				}
 			}
-			nav.setNotDone();
+			isDone=false;
 
 			/*If it was an object, turn the robot and the sensor toward the object and
 			 * set isFinished to start the BlockRecognition class from the main 
@@ -173,40 +180,42 @@ public class Scan extends Thread{
 				usMotor.setSpeed(25);
 				turnSensor(90);
 				turn(90);
-				isFinished = true;
+				Lab5.br.startRun();
+				//isFinished = true;
 			}
-			isFinished = false;
+			//isFinished = false;
 			//Si les deux classes run en meme temps, use synchronized(lock)
 			Sound.beepSequenceUp();
 			if(isObject){
 				turn(-90); // turn CCW
 				turnSensor(-90);
-				nav.goForward(5);
+				leftMotor.forward();
+				rightMotor.forward();
 			}
+			isObject = false;
 		}
 
 		//Object was not found, go to next coordinate
 		coordinateNotReached = true;
 		while (coordinateNotReached){
 
-			Thread caca = (new Thread() {
-				public void run() {
-					nav.travelTo(60, 60);
-				}
-			});
-			caca.start();
+			travelTo(60, 60);
+			
 
-			while (!nav.isDone()){
+			while (!nav2.isDone()){
 
 				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
-				if (nav.isDone()){
+				if (nav2.isDone()){
 					coordinateNotReached = false;
 				}
 
 				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
 				if (getFilteredData()< 30) {
+					nav2.setIsDone();
+					nav2.interruptIt();
+					
 					//		try{
-					caca.interrupt();
+				//caca.interrupt();
 					//caca.wait();
 					//caca.stop();
 					//		}
@@ -223,7 +232,7 @@ public class Scan extends Thread{
 					isObject = true;
 				}
 			}
-			nav.setNotDone();
+			nav2.setNotDone();
 
 			/*If it was an object, turn the robot and the sensor toward the object and
 			 * set isFinished to start the BlockRecognition class from the main 
@@ -245,7 +254,7 @@ public class Scan extends Thread{
 			if(isObject){
 				turn(-90); // turn CCW
 				turnSensor(-90);
-				nav.goForward(5);
+				nav2.goForward(5);
 			}
 			Sound.beepSequenceUp();
 
@@ -254,7 +263,7 @@ public class Scan extends Thread{
 
 		if (Math.abs(odo.getX() - 180) > CM_ERR
 				&& Math.abs(odo.getY() - 60) < CM_ERR) {
-			travelTo(180, 60);
+			travelTo2(180, 60);
 
 			if (isNotThereYet(60, 180)) {
 				isFinished = true;
@@ -269,7 +278,7 @@ public class Scan extends Thread{
 		}
 	}
 
-	public void travelTo(double x, double y) {
+	public void travelTo2(double x, double y) {
 		boolean isObject = false;
 
 		long timeStart, timeEnd;
@@ -364,6 +373,62 @@ public class Scan extends Thread{
 	}
 	public boolean coordinateReached(){
 		return coordinateNotReached ;
+	}
+	
+	public void travelTo(double x, double y) {
+		isDone  = false;
+		double minAng;
+		while (interruption && (Math.abs(x - odo.getX()) > CM_ERR || Math.abs(y - odo.getY()) > CM_ERR)) {
+			minAng = (Math.atan2(y - odo.getY(), x - odo.getX())) * (180.0 / Math.PI);
+			if (minAng < 0)
+				minAng += 360.0;
+			turnTo(minAng, false);
+			setSpeeds(FAST, FAST);
+			setSpeeds(FAST, FAST);
+			if (getFilteredData()< 30) {
+				break;	
+				}
+		}
+		rightMotor.setSpeed(0);
+		leftMotor.setSpeed(0);
+		isDone = true;
+	}
+	
+	public void setSpeeds(int lSpd, int rSpd) {
+		this.leftMotor.setSpeed(lSpd);
+		this.rightMotor.setSpeed(rSpd);
+		if (lSpd < 0)
+			this.leftMotor.backward();
+		else
+			this.leftMotor.forward();
+		if (rSpd < 0)
+			this.rightMotor.backward();
+		else
+			this.rightMotor.forward();
+	}
+	
+	public void turnTo(double angle, boolean stop) {
+
+		double error = angle - this.odo.getAng();
+
+		while (Math.abs(error) > DEG_ERR) {
+
+			error = angle - this.odo.getAng();
+
+			if (error < -180.0) {
+				setSpeeds(-SLOW, SLOW);
+			} else if (error < 0.0) {
+				setSpeeds(SLOW, -SLOW);
+			} else if (error > 180.0) {
+				setSpeeds(SLOW, -SLOW);
+			} else {
+				setSpeeds(-SLOW, SLOW);
+			}
+		}
+
+		if (stop) {
+			setSpeeds(0, 0);
+		}
 	}
 
 }

@@ -1,0 +1,11 @@
+package ev3ObjectRecognition;
+
+public class test {
+	public static void main(String[] args) {
+		boolean arnold = true;
+		while(true && arnold ){
+		System.out.println("hey");
+		arnold=false;
+		}
+	}
+}

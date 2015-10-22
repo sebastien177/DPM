@@ -20,6 +20,7 @@ public class Lab5 {
 	private static final Port colorPort = LocalEV3.get().getPort("S2");
 	public static final double WHEEL_RADIUS = 2.145;
 	public static final double TRACK = 15.25;
+	static BlockRecognition br;
 
 	public static void main(String[] args) {
 		int buttonChoice;
@@ -88,7 +89,7 @@ public class Lab5 {
 		while(buttonChoice != Button.ID_RIGHT
 				&& buttonChoice != Button.ID_ESCAPE){
 			if (buttonChoice == Button.ID_LEFT) {
-				ObjectDetection od = new ObjectDetection(colorSensor, colorData, usValue, usData);
+				ObjectDetection od = new ObjectDetection(colorValue, colorData, usValue, usData);
 				od.run();
 				LCD.drawString("< Left  |Right >", 0, 0);
 				LCD.drawString("        |       ", 0, 1);
@@ -103,21 +104,22 @@ public class Lab5 {
 		odo.start();
 		/*		USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
 		 */		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
-		 final BlockRecognition br = new BlockRecognition(odo,  usSensor,  usData,  colorSensor,colorData, rightMotor, leftMotor);
+		 br  = new BlockRecognition(odo,  usSensor,  usData,  colorValue,colorData, rightMotor, leftMotor);
 
 		 new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
 		 /*
 		usl.doLocalization();
 		  */		// begin the threads
 		 (new Thread() {
-			 public void run() {
-
-				 scan.start();
+			 public void run() { 
+				 
 				 br.start();
+				 scan.start();
+				 
 
-				 while (true) {
+				// while (true) {
 					 scan.startRun();
-
+/*
 					 // if a scanning routine needs to perform block detection
 					 if (scan.getIsDone()) {
 						 br.startRun();
@@ -127,9 +129,9 @@ public class Lab5 {
 					 }
 				 }
 
-			 }
+*/			 }
 		 }).start();
 		 while (Button.waitForAnyPress() != Button.ID_ESCAPE);
-		 System.exit(0);
+		 System.exit(0); 
 	}
 }

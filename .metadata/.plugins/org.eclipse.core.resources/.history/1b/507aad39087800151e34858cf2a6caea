@@ -1,0 +1,10 @@
+package ev3ObjectRecognition;
+
+public class Test {
+
+	public static void main(String[] args) {
+		while (true||false){
+			System.out.println("allo");
+		}
+	}
+}

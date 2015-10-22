@@ -10,13 +10,15 @@
  */
 package ev3ObjectRecognition;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.utility.Delay;
 
 public class Navigation extends Thread {
-	final static int FAST = 150, SLOW = 100, ACCELERATION = 4000;
+	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
 	final static double DEG_ERR = 3.0, CM_ERR = 1.0;
 	private Odometer odometer;
 	private EV3LargeRegulatedMotor leftMotor, rightMotor;
 	private boolean isDone = false;
+	private boolean interruption = true;
 
 	public Navigation(Odometer odo) {
 		this.odometer = odo;
@@ -76,7 +78,7 @@ public class Navigation extends Thread {
 	public void travelTo(double x, double y) {
 		isDone  = false;
 		double minAng;
-		while (Thread.currentThread().isInterrupted() || Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) {
+		while (!Thread.currentThread().isInterrupted() && interruption && (Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR)) {
 			minAng = (Math.atan2(y - odometer.getY(), x - odometer.getX())) * (180.0 / Math.PI);
 			if (minAng < 0)
 				minAng += 360.0;
@@ -85,16 +87,18 @@ public class Navigation extends Thread {
 		}
 		this.setSpeeds(0, 0);
 		isDone = true;
+		interruption = true;
 	}
 	
 	public void travelBackwardTo(double x, double y) {
 		isDone  = false;
 		double minAng;
-		while (Thread.currentThread().isInterrupted() || Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR) {
+		while (!Thread.currentThread().isInterrupted() && (Math.abs(x - odometer.getX()) > CM_ERR || Math.abs(y - odometer.getY()) > CM_ERR)) {
 			minAng = (Math.atan2(y - odometer.getY(), x - odometer.getX())) * (180.0 / Math.PI);
+			minAng-=180;
 			if (minAng < 0)
 				minAng += 360.0;
-			this.turnTo(-minAng, false);
+			this.turnTo(minAng, false);
 			this.setSpeeds(-FAST, -FAST);
 		}
 		this.setSpeeds(0, 0);
@@ -153,4 +157,21 @@ public class Navigation extends Thread {
 	public void setNotDone(){
 		isDone = false;
 		}
+	
+	public void setIsDone(){
+		isDone = true;
+		}
+	
+	public void interruptIt(){
+		interruption=false;
+		
+	}
+	public void speed(int newSpeed){
+		FAST = newSpeed;
+	}
+	public void goBackward(){
+		rightMotor.backward();
+		leftMotor.backward();
+		Delay.msDelay(500);
+	}
 }

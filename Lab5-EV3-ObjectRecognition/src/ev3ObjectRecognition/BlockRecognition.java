@@ -3,6 +3,7 @@ package ev3ObjectRecognition;
 import lejos.hardware.*;
 import java.util.Arrays;
 import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.*;
@@ -67,8 +68,6 @@ public class BlockRecognition extends Thread {
 		while (true){
 			timeStart = System.currentTimeMillis();
 
-
-
 			// stop if close to a block
 			if (getFilteredData() <= STOP_DISTANCE) {
 				Stop();
@@ -106,7 +105,8 @@ public class BlockRecognition extends Thread {
 
 		nav.travelBackwardTo(xInit, yInit);
 		//Stop();
-		isFinished = true;
+		//
+		//isFinished = true;
 		return;
 	}
 	
@@ -121,8 +121,10 @@ public class BlockRecognition extends Thread {
 
 		// determines the type of a block through the use of color ratios
 		public void setBlockType() {
+			Delay.msDelay(500);
 			colorSensor.fetchSample(colorData, 0);
-			float lightValue = colorData[0]*100;
+			float lightValue = colorData[0];
+			LCD.drawInt((int)lightValue, 7, 7);
 
 			if (lightValue > styrofoamColor[0] && lightValue < styrofoamColor[1] ) {
 				isStyro = true;
