@@ -12,6 +12,7 @@ package ev3ObjectRecognition;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.utility.Delay;
 
+//Navigation class given in lab4
 public class Navigation extends Thread {
 	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
 	final static double DEG_ERR = 3.0, CM_ERR = 1.0;
@@ -89,7 +90,7 @@ public class Navigation extends Thread {
 		isDone = true;
 		interruption = true;
 	}
-	
+	//New method that makes the robot travel backward
 	public void travelBackwardTo(double x, double y) {
 		isDone  = false;
 		double minAng;

@@ -12,6 +12,8 @@ import lejos.hardware.port.Port;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
 
+//This method is used for PartA of Lab5, it doesn't involve the motors, only the sensors and the screen
+//To display a description of objects displayed in front of the robot
 public class ObjectDetection extends Thread{
 
 	private SampleProvider colorSensor;
@@ -24,7 +26,6 @@ public class ObjectDetection extends Thread{
 	private int styrofoamColor[] = new int[] {5,9};
 
 
-	// constructor
 	public ObjectDetection(SampleProvider colorSensor, float[] colorData, SampleProvider usSensor, float[] usData) {
 		this.colorSensor = colorSensor;
 		this.colorData = colorData;
@@ -32,7 +33,7 @@ public class ObjectDetection extends Thread{
 		this.usData = usData;
 	}
 
-	// run method (required for Thread)
+	// This method differentiate a Wooden block from a Styrofoam block, used in PartA of Lab5
 	public void run() {
 		long correctionStart, correctionEnd;	
 		int buttonChoice = 0;
@@ -40,11 +41,11 @@ public class ObjectDetection extends Thread{
 			correctionStart = System.currentTimeMillis();
 
 			LCD.clear();
-			//UNKNOWN OBJECT WITHIN THRESHOLD
 			
+			//If there is an object in range, bring it closer so the colorSensor can see what it is
 			if (getFilteredData() < upper_threshold){
 				if (getFilteredData() > threshold) {
-					LocalEV3.get().getTextLCD().drawString("Bring Closer", 0, 0);
+					LocalEV3.get().getTextLCD().drawString("Bring Closer", 1, 1);
 				}
 				LocalEV3.get().getTextLCD().clear();
 				LocalEV3.get().getTextLCD().drawString("OBJECT DETECTED", 3, 5);	
@@ -52,9 +53,9 @@ public class ObjectDetection extends Thread{
 				//Detection of Blue Styrofoam
 				if ( getColorID() < styrofoamColor[1] && getColorID()>styrofoamColor[0] ){
 					Sound.beep(); 	
-					LocalEV3.get().getTextLCD().drawString("Styrofoam Block", 3, 6);
+					LocalEV3.get().getTextLCD().drawString("Styrofoam Block", 4, 6);
 				}
-				// OTHER OBJECT
+				// If it is not a styrofoam, it is a wooden block
 				else {
 					LocalEV3.get().getTextLCD().drawString("Wooden block", 3, 6);
 
@@ -75,7 +76,8 @@ public class ObjectDetection extends Thread{
 		}
 		LCD.clear();
 	}
-
+	
+	//Return distance values from the UltrasonicSensor
 	private float getFilteredData() {
 		usSensor.fetchSample(usData, 0);
 		float distance = usData[0]*100;
@@ -84,6 +86,7 @@ public class ObjectDetection extends Thread{
 		return distance;
 	}
 
+	//Return the ID of the color of the object in front 
 	private float getColorID(){
 		colorSensor.fetchSample(colorData, 0);
 		float color = colorData[0];

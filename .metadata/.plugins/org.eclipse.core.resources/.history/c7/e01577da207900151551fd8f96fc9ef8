@@ -1,0 +1,21 @@
+package ev3ObjectRecognition;
+
+public class Test {
+	public static void main(String[] args) {
+
+		test();	
+		
+	}
+	
+	public static void test(){
+		
+		while (true) {
+			
+			if (true) {
+				break;
+			}
+		}
+		System.out.println("sortie de la loop");
+		
+	}
+}

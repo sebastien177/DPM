@@ -10,13 +10,14 @@ import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
-
+//This class is mostly run after the "scan" class, its purpose is to make the robot
+//Go to a block after it has recognize one and find what type of block it is
 public class BlockRecognition extends Thread {
 	public final Object lock = new Object(); // for blocking method
 	private static final int TIME_PERIOD = 20;
 	private static final int FORWARD_SPEED = 100;
 	private static final int ROTATE_SPEED = 100;
-	private static final int STOP_DISTANCE = 4; // how far from block to stop
+	private static final int MIN_DISTANCE = 4; // how far from block to stop
 	private static final double RIGHT_RADIUS = 2.1;
 	private static final double LEFT_RADIUS = 2.1;
 	private static final double WIDTH = 15.6;
@@ -42,7 +43,7 @@ public class BlockRecognition extends Thread {
 	int[] distanceArray = new int[5];
 	int[] sortedArray = new int[5];
 	private boolean finisheMOFO = false;
-	
+
 	public BlockRecognition(Odometer odo, SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData,
 			EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor leftMotor){
 		this.odo = odo;
@@ -53,29 +54,31 @@ public class BlockRecognition extends Thread {
 		this.rightMotor = rightMotor;
 		this.leftMotor = leftMotor;
 		nav = new Navigation(odo);
-		}
+	}
+
 	
+	//This class makes the robot go to the detected object and see if it is a wooden block or styrofoam.
 	public void startRun(){
-		
+
 		long timeStart, timeEnd;
 
-		double xInit = odo.getX(); // initial x position
-		double yInit = odo.getY(); // initial y position
-		
+		double xInit = odo.getX(); // starting x position
+		double yInit = odo.getY(); // starting y position
+
 		leftMotor.forward();
 		rightMotor.forward();
-		
+
 		while (true){
 			timeStart = System.currentTimeMillis();
 
-			// stop if close to a block
-			if (getFilteredData() <= STOP_DISTANCE) {
+			// If the block is within the stop distance
+			if (getFilteredData() <= MIN_DISTANCE) {
 				Stop();
 				Delay.msDelay(500);
-				setBlockType(); // determine block type
+				setBlockType(); // check if block is styrofoam
 
 				if (isStyro) {
-					grabBlock();
+					grabBlock(); //if it is take it to (70,70)
 				} else {
 					break;
 				}
@@ -91,9 +94,6 @@ public class BlockRecognition extends Thread {
 				try {
 					Thread.sleep(TIME_PERIOD - (timeEnd - timeStart));
 				} catch (InterruptedException e) {
-					// there is nothing to be done here because it is not
-					// expected that the detector will be
-					// interrupted by another thread
 				}
 			}
 		}
@@ -101,7 +101,7 @@ public class BlockRecognition extends Thread {
 		while (isNotThereYet(xInit, yInit)) {
 			goBackward();
 		}
-		*/
+		 */
 
 		nav.travelBackwardTo(xInit, yInit);
 		//Stop();
@@ -109,114 +109,120 @@ public class BlockRecognition extends Thread {
 		//isFinished = true;
 		return;
 	}
-	
-	// accessors
-		public boolean getIsStyro() {
-			return isStyro;
+
+	// getters
+	public boolean getIsStyro() {
+		return isStyro;
+	}
+
+	public boolean getIsCinder() {
+		return isCinder;
+	}
+
+	// determines the type of the block using the Color ID provided by the sensor
+	public void setBlockType() {
+		Delay.msDelay(500);
+		colorSensor.fetchSample(colorData, 0);
+		float lightValue = colorData[0];
+		LCD.drawInt((int)lightValue, 7, 7);
+
+		if (lightValue > styrofoamColor[0] && lightValue < styrofoamColor[1] ) {
+			isStyro = true;
+			isCinder = false;
+			Sound.beep();
+		} else {
+			Sound.beep();
+			Sound.beep();
+			isCinder = true;
+			isStyro = false;
 		}
+	}
 
-		public boolean getIsCinder() {
-			return isCinder;
-		}
+    //Go foward infinetely
+	public void goForward() {
+		leftMotor.setSpeed(FORWARD_SPEED);
+		rightMotor.setSpeed(FORWARD_SPEED);
+		leftMotor.forward();
+		rightMotor.forward();
+	}
 
-		// determines the type of a block through the use of color ratios
-		public void setBlockType() {
-			Delay.msDelay(500);
-			colorSensor.fetchSample(colorData, 0);
-			float lightValue = colorData[0];
-			LCD.drawInt((int)lightValue, 7, 7);
+	// Go backward indefinitely
+	public void goBackward() {
+		leftMotor.setSpeed(FORWARD_SPEED);
+		rightMotor.setSpeed(FORWARD_SPEED);
+		leftMotor.backward();
+		rightMotor.backward();
+	}
 
-			if (lightValue > styrofoamColor[0] && lightValue < styrofoamColor[1] ) {
-				isStyro = true;
-				isCinder = false;
-			} else {
-				isCinder = true;
-				isStyro = false;
-			}
-		}
+	// stops the robot
+	public void Stop() {
+		leftMotor.stop();
+		rightMotor.stop();
+	}
 
-		// travel in a straight line indefinitely
-		public void goForward() {
-			leftMotor.setSpeed(FORWARD_SPEED);
-			rightMotor.setSpeed(FORWARD_SPEED);
-			leftMotor.forward();
-			rightMotor.forward();
-		}
+	// Go around the block to take it and bring it to final position
+	public void grabBlock() {
+		goSetDistance(-10); // get the robot to move backwards so that it can
+		// then either move around a wooden block or adjust
+		// its position to push a styrofoam block
 
-		// travel backwards indefinitely
-		public void goBackward() {
-			leftMotor.setSpeed(FORWARD_SPEED);
-			rightMotor.setSpeed(FORWARD_SPEED);
-			leftMotor.backward();
-			rightMotor.backward();
-		}
+		turn(-90); // CCW
+		goSetDistance(10);
+		turn(90); // CW
+		goSetDistance(10);
+		
+		//Since we only have one arm on the left, make the robot do a full turn to have the block in possession
+		leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, 360), true);
+		rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, 360), false);
 
-		// stops the robot
-		public void Stop() {
-			leftMotor.stop();
-			rightMotor.stop();
-		}
+		// Go to position (70,70)
+		nav.travelTo(70, 70);
+	}
 
-		// method adjusts robot's position to capture the styrofoam block
-		public void grabBlock() {
-			goSetDistance(-10); // get the robot to move backwards so that it can
-			// then either move around a wooden block or adjust
-			// its position to push a styrofoam block
+	// travels a specific distance
+	public void goSetDistance(double distance) {
+		leftMotor.setSpeed(-FORWARD_SPEED);
+		rightMotor.setSpeed(-FORWARD_SPEED);
+		rightMotor.rotate(convertDistance(RIGHT_RADIUS, distance), true);
+		leftMotor.rotate(convertDistance(LEFT_RADIUS, distance), false);
+	}
 
-			turn(-90); // CCW
-			goSetDistance(10);
-			turn(90); // CW
-			goSetDistance(10);
+	// turns the robot
+	public void turn(double angle) {
+		leftMotor.setSpeed(ROTATE_SPEED);
+		rightMotor.setSpeed(ROTATE_SPEED);
+		leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, angle), true);
+		rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, angle), false);
+	}
 
-			// goes forward indefinitely as we didn't implement a method of
-			// travelling to corner properly
-			nav.travelTo(60, 60);
-		}
+	// helper method to convert the distance each wheel must travel
+	private static int convertDistance(double radius, double distance) {
+		return (int) ((180.0 * distance) / (Math.PI * radius));
+	}
 
-		// travels a specific distance
-		public void goSetDistance(double distance) {
-			leftMotor.setSpeed(-FORWARD_SPEED);
-			rightMotor.setSpeed(-FORWARD_SPEED);
-			rightMotor.rotate(convertDistance(RIGHT_RADIUS, distance), true);
-			leftMotor.rotate(convertDistance(LEFT_RADIUS, distance), false);
-		}
+	// helper method to convert the angle each motor must rotate
+	private static int convertAngle(double radius, double width, double angle) {
+		return convertDistance(radius, Math.PI * width * angle / 360.0);
+	}
 
-		// turns the robot
-		public void turn(double angle) {
-			leftMotor.setSpeed(ROTATE_SPEED);
-			rightMotor.setSpeed(ROTATE_SPEED);
-			leftMotor.rotate(convertAngle(LEFT_RADIUS, WIDTH, angle), true);
-			rightMotor.rotate(-convertAngle(RIGHT_RADIUS, WIDTH, angle), false);
-		}
+	// returns a boolean telling whether the robot is at target location
+	public boolean isNotThereYet(double x, double y) {
+		return Math.abs(x - odo.getX()) > CM_ERR
+				|| Math.abs(y - odo.getY()) > CM_ERR;
+	}
 
-		// helper method to convert the distance each wheel must travel
-		private static int convertDistance(double radius, double distance) {
-			return (int) ((180.0 * distance) / (Math.PI * radius));
-		}
+	public boolean isDoneForNow() {
+		return isFinished;
+	}
 
-		// helper method to convert the angle each motor must rotate
-		private static int convertAngle(double radius, double width, double angle) {
-			return convertDistance(radius, Math.PI * width * angle / 360.0);
-		}
-
-		// returns a boolean telling whether the robot is at target location
-		public boolean isNotThereYet(double x, double y) {
-			return Math.abs(x - odo.getX()) > CM_ERR
-					|| Math.abs(y - odo.getY()) > CM_ERR;
-		}
-
-		public boolean isDoneForNow() {
-			return isFinished;
-		}
-	
-	
+	//Return distance values from the UltrasonicSensor
 	private float getFilteredData() {
 		usSensor.fetchSample(usData, 0);
 		float distance = usData[0]*100;
-				
+
 		return distance;
 	}
-	
+
 	public boolean finishedMOFO(){
 		return finisheMOFO;
 	}

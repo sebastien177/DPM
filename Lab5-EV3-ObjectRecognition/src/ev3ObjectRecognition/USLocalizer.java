@@ -9,19 +9,20 @@ import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
+//This code is moslty taken from the USLocalizer done in Lab5
+//It makes the robot find it's initial position and orientation
 public class USLocalizer {
-	public enum LocalizationType { // The two types of ultrasonic localization
+	public enum LocalizationType { // The two localization type available
 		FALLING_EDGE, RISING_EDGE
 	};
-	
-	// Constant speed of the robot's rotation
+
+	//Variable declaration
 	public static double ROTATION_SPEED = 30;
 	public static double SENSOR_DISTANCE = 8.0; // Distance of the sensor from the robot's center
 	private static double turnError = 1.5; 
 	private double leftRadius, rightRadius, width;
 	private double forwardSpeed, rotationSpeed;
-
-	// Declaration of class variables
+	private double threshold = 41; // The threshold value when a robot sees the wall
 	private Odometer odo;
 	private LocalizationType locType;
 	private EV3LargeRegulatedMotor leftMotor;
@@ -43,18 +44,18 @@ public class USLocalizer {
 		this.width = width;
 	}
 
-	// Performs the ultrasonic localization
+	// This class makes the robot localize at the start of the lab
+	//It makes the robot orient itself to an angle of 45 degrees at the position (0,0)
 	public void doLocalization() {
-		// Building the navigation with the odometer
+
 		Navigation nav = new Navigation(this.odo);
-		// The two angles of the robot when it senses both walls
+		// These will be the angles of the robot from both walls
 		double angleA, angleB;
-		// double Error = 1.0;
-		double threshold = 41; // The threshold value when a robot sees the wall
-		// Setting the position of the robot to all 0.
+
+		//Initialize the robot position to 0
 		odo.setPosition(new double[] { 0.0, 0.0, 0.0 }, new boolean[] { true,
 				true, true });
-		// Falling edge localization routine
+		// The localization type used for the lab will mostly by Falling Edge
 		if (locType == LocalizationType.FALLING_EDGE) {
 
 			// Rotate the robot until it sees no wall
@@ -90,11 +91,11 @@ public class USLocalizer {
 
 			double theta = 0;
 			if (angleA > angleB) {
-				
+
 				theta = 45 - (angleA + angleB) / 2;
 				theta += odo.getAng();
 			} else {
-				
+
 				theta = 230 - (angleA + angleB) / 2;
 			}
 
@@ -102,7 +103,6 @@ public class USLocalizer {
 			odo.setPosition(new double[] { 0.0, 0.0, theta }, new boolean[] {
 					true, true, true });
 
-			// 
 			for (int i = 0; i < 50; i++) {
 				setRotationSpeed(-10);
 			}
@@ -110,10 +110,10 @@ public class USLocalizer {
 			// This rotation is to face the wall directly to get its x position
 			while (odo.getAng() > 270) {
 				setRotationSpeed(-20);
-				
+
 
 			}
-			
+
 			setRotationSpeed(0);
 
 			// Calculating the x position taking into consideration the sensor distance
@@ -128,13 +128,13 @@ public class USLocalizer {
 
 				setRotationSpeed(-20);
 			}
-			
+
 			setRotationSpeed(0);
 
 			// Calculating the y position taking into consideration the sensor distance
 			double yPosition = 2*((getFilteredData() + SENSOR_DISTANCE));
 
-			
+
 			// Setting the final position of the robot after localizing
 			odo.setPosition(
 					new double[] { 0.0, -yPosition, odo.getAng() },
@@ -144,13 +144,11 @@ public class USLocalizer {
 			while (180.0 - odo.getAng() + turnError < 180) {
 
 				setRotationSpeed(-30);
-				
+
 			}
 			// Stop the robot after reaching the origin
 			setRotationSpeed(0);
-			nav.travelTo(0, 0);
-			// After updating its position relative to the origin and is facing the origin, drive to a 
-			// point near the origin (here is -5.0, -4.0) to start light localization
+			//nav.travelTo(0, 0);
 			odo.setPosition(
 					new double[] { 0.0, 0.0, odo.getAng()},
 					new boolean[] { true, true, true });
@@ -166,20 +164,20 @@ public class USLocalizer {
 
 	// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
 	private int getFilteredData() {
-		
+
 		// wait for the ping to complete
 		try {
 			Thread.sleep(25);
 		} 
 		catch (InterruptedException e) {
-			
+
 		}
 		usSensor.fetchSample(usData, 0);
 		int distance = (int) (usData[0]*100);
 
 		LCD.drawInt((int) distance, 3, 3);
 		LCD.drawInt((int) SENSOR_DISTANCE, 6, 6);
-		
+
 		// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
 		// to be 35
 
@@ -192,17 +190,17 @@ public class USLocalizer {
 		return distance;
 
 	}
-	
+
 	public void setForwardSpeed(double speed) {
 		forwardSpeed = speed;
 		setSpeeds(forwardSpeed, rotationSpeed);
 	}
-	
+
 	public void setRotationSpeed(double speed) {
 		rotationSpeed = speed;
 		setSpeeds(forwardSpeed, rotationSpeed);
 	}
-	
+
 	public void setSpeeds(double forwardSpeed, double rotationalSpeed) {
 		double leftSpeed, rightSpeed;
 
@@ -221,25 +219,19 @@ public class USLocalizer {
 			this.leftMotor.backward();
 			leftSpeed = -leftSpeed;
 		}
-		
+
 		if (rightSpeed > 0.0)
 			this.rightMotor.forward();
 		else {
 			this.rightMotor.backward();
 			rightSpeed = -rightSpeed;
 		}
-		
+
 		// set motor speeds
-		if (leftSpeed > 900.0)
-			this.leftMotor.setSpeed(900);
-		else
-			this.leftMotor.setSpeed((int)leftSpeed);
-		
-		if (rightSpeed > 900.0)
-			this.rightMotor.setSpeed(900);
-		else
-			this.rightMotor.setSpeed((int)rightSpeed);
+		this.leftMotor.setSpeed((int)leftSpeed);
+
+		this.rightMotor.setSpeed((int)rightSpeed);
 	}
-	
+
 
 }

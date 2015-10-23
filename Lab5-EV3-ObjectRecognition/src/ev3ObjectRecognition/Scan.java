@@ -1,5 +1,5 @@
 package ev3ObjectRecognition;
-//12h33 pour le save original
+
 import lejos.hardware.*;
 import java.util.Arrays;
 import lejos.hardware.ev3.LocalEV3;
@@ -9,11 +9,12 @@ import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
+//This is the scanning class which makes the robot travel around the map and search for ANY objects
+//If it sees an object, it will launch a new class.
 public class Scan extends Thread{
 
+	//Variables declaration
 	private SampleProvider usSensor;
-	private SampleProvider colorSensor;
-	private float[] colorData;
 	private Odometer odo;
 	private Navigation nav;
 	private EV3LargeRegulatedMotor rightMotor;
@@ -21,18 +22,19 @@ public class Scan extends Thread{
 	private EV3LargeRegulatedMotor usMotor;
 	private static final int FORWARD_SPEED = 150;
 	private static final int ROTATE_SPEED = 150;
-	private static final double RIGHT_RADIUS = 2.1;
-	private static final double LEFT_RADIUS = 2.1;
-	private static final double WIDTH = 15.6;
+	private static final double RIGHT_RADIUS = 2.145;
+	private static final double LEFT_RADIUS = 2.145;
+	private static final double WIDTH = 15.25;
 	private static final double CM_ERR = 1.5;
-	int[] distanceArray = new int[5]; // distance readings
-	int[] sortedArray = new int[5]; // distance readings in ascending order
+	int[] distanceArray = new int[5]; 
+	int[] sortedArray = new int[5]; 
 	boolean isFinished;
 	private float[] usData;
 	private static final int TIME_PERIOD = 20;
-	private boolean isObject = false;
+	//The three next boolean will be explained inside the code
 	private boolean coordinateNotReached = true;
 	private boolean isDone = false;
+	private boolean isObject = false;
 	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
 	private boolean interruption = true;
 	final static double DEG_ERR = 3.0;
@@ -40,144 +42,72 @@ public class Scan extends Thread{
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
 		this.usSensor = usSensor;
 		this.usData = usData;
-		this.colorSensor = colorSensor;
-		this.colorData = colorData;
 		this.odo = odo;
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
 		this.usMotor = usMotor;
 	}
 
+	//This constructor is used in USLocalizer to make the USsensor rotate
 	public Scan (EV3LargeRegulatedMotor usMotor){
 		this.usMotor = usMotor;
 	}
 
-	@SuppressWarnings("deprecation")
+
+	//This is the method launched by the thread, that makes the robot navigate around
 	public void startRun(){
 		isFinished = false;		
 		final Navigation nav = new Navigation(this.odo);
 		final Navigation nav2 = new Navigation(this.odo);
 
+		
+		//might have to change
 		odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
 		turn(-45);
-		//			For test	
 
-		/*
-		leftMotor.setSpeed(FORWARD_SPEED);
-		rightMotor.setSpeed(FORWARD_SPEED);
-		leftMotor.forward();
-		rightMotor.forward();
-		 */
-		//nav.travelTo(0, 60);
 
-		// nav.travelTo(0, 30);
+		//Turn the USsensor after localization to scan the objects on the field on the right of the robot
+		usMotor.setSpeed(70); 
+		turnSensor(-90);
 
-		/* 
-		 Thread caca = (new Thread() {
-				public void run() {
-					nav.travelTo(0, 30);
-				}
-			});
-		 caca.start();
-
-		 Sound.beep();
-		 Delay.msDelay(1000);
-		 caca.interrupt();
-		 Sound.beep();
-		 caca.resume();
-		leftMotor.stop();
-		rightMotor.stop();
-		Sound.beep();
-		//Delay.msDelay(10000);
-		 */
-
-		usMotor.setSpeed(70); // rotate sensor fast to be useful while moving
-		turnSensor(-90); // rotate sensor counterclockwise
-
-		// assuming we're near our starting position, travel to 0,60
-
-		/* 
-		 if (Math.abs(odo.getX() - 0) < CM_ERR
-						&& Math.abs(odo.getY() - 60) > CM_ERR) {
-					travelTo(0, 60);
-
-					if (isNotThereYet(60, 0)) {
-						isFinished = true;
-						return;
-					}
-
-					turn(90); // turn CCW
-				}
-
-				else if (Math.abs(odo.getX() - 180) > CM_ERR
-						&& Math.abs(odo.getY() - 60) < CM_ERR) {
-					travelTo(180, 60);
-
-					if (isNotThereYet(60, 180)) {
-						isFinished = true;
-						return;
-					}
-
-					turn(-90); // turn CCW
-				}
-
-				else {
-					isFinished = true;
-				}
-		 */
-
-		//To know if we reached the first coordinate yet
+		//The boolean coordinateNotReached is to know if we reached the first coordinate yet
 		while (coordinateNotReached){
 	
+			/*
+			 * The isDone boolean is know when hte robot has to stop travelling 
+			 * 2 cases : An object was detected or we reached the coordinate we set
+			 */
 			while (!isDone){
 				travelTo(0, 60);
 
-				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
+				//If we reached the wanted coordinate, then we didn't pick up any object... go to next coordinate
 				if (isDone){
 					coordinateNotReached = false;
 				}
 
-				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
-				if (getFilteredData()< 30) {
+				//If there is an object inside 30cm on the right change the speed of the robot to go more slowly
+				if (getFilteredData()< 30 && coordinateNotReached) {
+					//While there is an object advance slowly
 					FAST=30;
 					while (getFilteredData()<40){
 						travelTo(0,60);
 					}
+					//When there is no more object on the right stop the robot and put FAST to initial value for next iteration
 					setSpeeds(0, 0);
 					FAST=150;
+					
+					//set isObject and isDone to true, to go get the object
 					isDone=true;
-					
-					
-					//nav.goBackward();
-					//		try{
-					//caca.interrupt();
-					//caca.wait();
-					//caca.stop();
-					//		}
-					/*		catch (ThreadDeath E){
-					//cuz we dont care
-					//System.out.println(E);
-				}
-				catch (Error E){
-
-				}
-				catch (Exception A){
-
-				}*/
 					isObject = true;
 				}
 			}
 			isDone=false;
 
-			/*If it was an object, turn the robot and the sensor toward the object and
-			 * set isFinished to start the BlockRecognition class from the main 
+			/*If it was an object, turn the robot 90 degree and make it sensor look in front of the robot
+			 * launch the BLockRecognition class
 			 */
 			if (isObject) {
-				//lancer une methode
-
-				/*leftMotor.stop();
-			rightMotor.stop();*/
-				usMotor.setSpeed(25);
+				usMotor.setSpeed(50);
 				turnSensor(90);
 				turn(90);
 				Lab5.br.startRun();
@@ -186,24 +116,28 @@ public class Scan extends Thread{
 			//isFinished = false;
 			//Si les deux classes run en meme temps, use synchronized(lock)
 			Sound.beepSequenceUp();
+			
+			//If we are back after BlockRecognition that means it wasn't a styrofoam
+			//Make the robot continue it orginal travelling and scanning
 			if(isObject){
 				turn(-90); // turn CCW
 				turnSensor(-90);
 				leftMotor.forward();
 				rightMotor.forward();
+				Delay.msDelay(200);
 			}
 			isObject = false;
 		}
 
-		//Object was not found, go to next coordinate
+		//Object was not found while going to first coordinate, go to next coordinate
 		coordinateNotReached = true;
+		isDone = false;
 		while (coordinateNotReached){
 
-			travelTo(60, 60);
-			
+			while (!isDone){
 
-			while (!nav2.isDone()){
-
+				travelTo(60, 60);
+				
 				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
 				if (nav2.isDone()){
 					coordinateNotReached = false;
@@ -330,7 +264,7 @@ public class Scan extends Thread{
 				|| Math.abs(y - odo.getY()) > CM_ERR;
 	}
 
-	// turns the robot by a specified angle
+	// Turn the motor attached to the USsensor
 	public void turnSensor(int degrees) {
 		usMotor.rotate(degrees);
 	}
@@ -356,7 +290,7 @@ public class Scan extends Thread{
 
 
 
-
+	//Return distance values from the UltrasonicSensor
 	private float getFilteredData() {
 		usSensor.fetchSample(usData, 0);
 		float distance = usData[0]*100;
@@ -375,6 +309,7 @@ public class Scan extends Thread{
 		return coordinateNotReached ;
 	}
 	
+	//First method to travel
 	public void travelTo(double x, double y) {
 		isDone  = false;
 		double minAng;
@@ -385,13 +320,34 @@ public class Scan extends Thread{
 			turnTo(minAng, false);
 			setSpeeds(FAST, FAST);
 			setSpeeds(FAST, FAST);
+			
+			//While we are travelling if we see an object, stop the method
 			if (getFilteredData()< 30) {
-				break;	
+				return;
 				}
 		}
 		rightMotor.setSpeed(0);
 		leftMotor.setSpeed(0);
 		isDone = true;
+	}
+	
+	//Call this second method multiple times to travel (it must be called inside a while loop)
+	//This method doesn't have to be completed to execute another action
+	public void travelTo3(double x, double y) {
+		isDone  = false;
+		double minAng;
+		if (Math.abs(x - odo.getX()) > CM_ERR || Math.abs(y - odo.getY()) > CM_ERR) {
+			minAng = (Math.atan2(y - odo.getY(), x - odo.getX())) * (180.0 / Math.PI);
+			if (minAng < 0)
+				minAng += 360.0;
+			turnTo(minAng, false);
+			setSpeeds(FAST, FAST);
+			setSpeeds(FAST, FAST);
+		} else{
+		rightMotor.setSpeed(0);
+		leftMotor.setSpeed(0);
+		isDone = true;
+		}
 	}
 	
 	public void setSpeeds(int lSpd, int rSpd) {

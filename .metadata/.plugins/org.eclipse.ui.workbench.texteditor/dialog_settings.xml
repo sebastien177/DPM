@@ -2,12 +2,13 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="isDone" key="selection"/>
+		<item value="Wooden" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
+			<item value="Wooden"/>
 			<item value="isDone"/>
 			<item value="travelTo"/>
 			<item value="setSpeeds"/>
@@ -15,7 +16,6 @@
 			<item value="nav2"/>
 			<item value="nav"/>
 			<item value="finisheMOFO"/>
-			<item value="Sound"/>
 		</list>
 		<list key="replacehistory">
 			<item value="nav2"/>

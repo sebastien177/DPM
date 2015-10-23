@@ -25,19 +25,7 @@ public class Lab5 {
 	public static void main(String[] args) {
 		int buttonChoice;
 
-		//Setup ultrasonic sensor
-		// 1. Create a port object attached to a physical port (done above)
-		// 2. Create a sensor instance and attach to port
-		// 3. Create a sample provider instance for the above and initialize operating mode
-		// 4. Create a buffer for the sensor data
 		@SuppressWarnings("resource")							    	// Because we don't bother to close this resource
-
-
-		//Setup color sensor
-		// 1. Create a port object attached to a physical port (done above)
-		// 2. Create a sensor instance and attach to port
-		// 3. Create a sample provider instance for the above and initialize operating mode
-		// 4. Create a buffer for the sensor data
 
 		// setup the odometer and display
 		Odometer odo = new Odometer(leftMotor, rightMotor, 30, true);
@@ -47,7 +35,7 @@ public class Lab5 {
 			// clear the display
 			t.clear();
 
-			// ask the user whether to navigate with or without the obstacle
+			// ask the user whether he wants to detect blocks or search blocks
 			t.drawString("< Left  |Right >", 0, 0);
 			t.drawString("        |       ", 0, 1);
 			t.drawString("Detect|Search ", 0, 2);
@@ -56,6 +44,10 @@ public class Lab5 {
 
 			while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT 
 					&& buttonChoice != Button.ID_ESCAPE){
+				/*
+				 * These two if statements is to make the motor attached to the USsensor rotate
+				 * 90 degrees before the main methods are launched
+				 */
 				if (buttonChoice == Button.ID_UP) {
 					Scan scan = new Scan(usMotor);
 					scan.usMotorSpeed(50);
@@ -85,7 +77,7 @@ public class Lab5 {
 		SampleProvider colorValue = colorSensor.getMode("ColorID");			// colorValue provides samples from this instance
 		float[] colorData = new float[colorValue.sampleSize()];			// colorData is the buffer in which data are returned
 
-		// for testing, we added this to avoid localizing each time
+		// The following start the PartA of the Lab when the right button is pressed, afterwards press escape to exit program
 		while(buttonChoice != Button.ID_RIGHT
 				&& buttonChoice != Button.ID_ESCAPE){
 			if (buttonChoice == Button.ID_LEFT) {
@@ -101,6 +93,8 @@ public class Lab5 {
 		if (buttonChoice == Button.ID_ESCAPE){
 			System.exit(0);
 		}
+		//If the left button is pressed, the robot will start partB of the lab and start scanning the field
+		
 		odo.start();
 		/*		USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
 		 */		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
@@ -109,7 +103,9 @@ public class Lab5 {
 		 new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
 		 /*
 		usl.doLocalization();
-		  */		// begin the threads
+		  */		
+		 
+		 // begin the threads (we launch a thread to be able to exit it whenever we want using escape)
 		 (new Thread() {
 			 public void run() { 
 				 

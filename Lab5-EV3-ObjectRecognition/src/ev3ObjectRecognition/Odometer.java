@@ -30,6 +30,7 @@ import lejos.utility.Timer;
 import lejos.utility.TimerListener;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
+//Odometer class given in the lab4
 public class Odometer implements TimerListener {
 
 	private Timer timer;
