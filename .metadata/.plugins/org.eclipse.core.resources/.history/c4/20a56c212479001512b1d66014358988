@@ -1,7 +1,11 @@
 package ev3ObjectRecognition;
 
 import lejos.hardware.*;
+import java.util.Arrays;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
@@ -12,9 +16,11 @@ public class Scan extends Thread{
 	//Variables declaration
 	private SampleProvider usSensor;
 	private Odometer odo;
+	private Navigation nav;
 	private EV3LargeRegulatedMotor rightMotor;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor usMotor;
+	private static final int FORWARD_SPEED = 150;
 	private static final int ROTATE_SPEED = 150;
 	private static final double RIGHT_RADIUS = 2.145;
 	private static final double LEFT_RADIUS = 2.145;
@@ -22,11 +28,12 @@ public class Scan extends Thread{
 	private static final double CM_ERR = 1.5;
 	private boolean isFinished;
 	private float[] usData;
+	private static final int TIME_PERIOD = 20;
 	//The three next boolean will be explained inside the code
 	private boolean coordinateNotReached = true;
 	private boolean isDone = false;
 	private boolean isObject = false;
-	private int FAST = 150, SLOW = 100;
+	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
 	final static double DEG_ERR = 3.0;
 
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
@@ -47,6 +54,8 @@ public class Scan extends Thread{
 	//This is the method launched by the thread, that makes the robot navigate around
 	public void startRun(){
 		isFinished = false;		
+		final Navigation nav = new Navigation(this.odo);
+		final Navigation nav2 = new Navigation(this.odo);
 
 
 		//might have to change

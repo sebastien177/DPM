@@ -1,6 +1,6 @@
 package ev3ObjectRecognition;
 
-//21h22
+
 import lejos.hardware.*;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;

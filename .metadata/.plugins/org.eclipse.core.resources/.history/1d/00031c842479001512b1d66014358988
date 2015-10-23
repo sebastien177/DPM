@@ -1,12 +1,13 @@
 package ev3ObjectRecognition;
 
-//21h22
+
 import lejos.hardware.*;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
+import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 
@@ -23,6 +24,8 @@ public class Lab5 {
 
 	public static void main(String[] args) {
 		int buttonChoice;
+
+		@SuppressWarnings("resource")							    	// Because we don't bother to close this resource
 
 		// setup the odometer and display
 		Odometer odo = new Odometer(leftMotor, rightMotor, 30, true);

@@ -1,8 +1,12 @@
 package ev3ObjectRecognition;
 
 import lejos.hardware.*;
+import java.util.Arrays;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
@@ -29,8 +33,12 @@ public class BlockRecognition extends Thread {
 	private int styrofoamColor[] = new int[] {5,9};
 	private EV3LargeRegulatedMotor rightMotor;
 	private EV3LargeRegulatedMotor leftMotor;
+	private EV3LargeRegulatedMotor usMotor;
 	Navigation nav;
 
+	private int redValue, blueValue; // color readings
+
+	private int distance, medianDistance;
 
 	int[] distanceArray = new int[5];
 	int[] sortedArray = new int[5];

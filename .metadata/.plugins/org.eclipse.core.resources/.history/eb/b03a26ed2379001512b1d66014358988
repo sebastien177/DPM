@@ -1,7 +1,11 @@
 package ev3ObjectRecognition;
 
 import lejos.hardware.*;
+import java.util.Arrays;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
@@ -12,21 +16,27 @@ public class Scan extends Thread{
 	//Variables declaration
 	private SampleProvider usSensor;
 	private Odometer odo;
+	private Navigation nav;
 	private EV3LargeRegulatedMotor rightMotor;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor usMotor;
+	private static final int FORWARD_SPEED = 150;
 	private static final int ROTATE_SPEED = 150;
 	private static final double RIGHT_RADIUS = 2.145;
 	private static final double LEFT_RADIUS = 2.145;
 	private static final double WIDTH = 15.25;
 	private static final double CM_ERR = 1.5;
-	private boolean isFinished;
+	int[] distanceArray = new int[5]; 
+	int[] sortedArray = new int[5]; 
+	boolean isFinished;
 	private float[] usData;
+	private static final int TIME_PERIOD = 20;
 	//The three next boolean will be explained inside the code
 	private boolean coordinateNotReached = true;
 	private boolean isDone = false;
 	private boolean isObject = false;
-	private int FAST = 150, SLOW = 100;
+	int FAST = 150, SLOW = 100, ACCELERATION = 4000;
+	private boolean interruption = true;
 	final static double DEG_ERR = 3.0;
 
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
@@ -47,8 +57,10 @@ public class Scan extends Thread{
 	//This is the method launched by the thread, that makes the robot navigate around
 	public void startRun(){
 		isFinished = false;		
+		final Navigation nav = new Navigation(this.odo);
+		final Navigation nav2 = new Navigation(this.odo);
 
-
+		
 		//might have to change
 		odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
 		turn(-45);
@@ -60,7 +72,7 @@ public class Scan extends Thread{
 
 		//The boolean coordinateNotReached is to know if we reached the first coordinate yet
 		while (coordinateNotReached){
-
+	
 			/*
 			 * The isDone boolean is know when hte robot has to stop travelling 
 			 * 2 cases : An object was detected or we reached the coordinate we set
@@ -83,7 +95,7 @@ public class Scan extends Thread{
 					//When there is no more object on the right stop the robot and put FAST to initial value for next iteration
 					setSpeeds(0, 0);
 					FAST=150;
-
+					
 					//set isObject and isDone to true, to go get the object
 					isDone=true;
 					isObject = true;
@@ -104,7 +116,7 @@ public class Scan extends Thread{
 			//isFinished = false;
 			//Si les deux classes run en meme temps, use synchronized(lock)
 			Sound.beepSequenceUp();
-
+			
 			//If we are back after BlockRecognition that means it wasn't a styrofoam
 			//Make the robot continue it orginal travelling and scanning
 			if(isObject){
@@ -124,11 +136,126 @@ public class Scan extends Thread{
 
 			while (!isDone){
 
-				travelTo(60, 60);		
+				travelTo(60, 60);
+				
+				//If we reached the wanted coordinate, go to the next loop, we don't have the object yet
+				if (nav2.isDone()){
+					coordinateNotReached = false;
+				}
+
+				//If there is an object inside 30cm get out of the while loop and set isObject to true, to go and get it
+				if (getFilteredData()< 30) {
+					nav2.setIsDone();
+					nav2.interruptIt();
+					
+					//		try{
+				//caca.interrupt();
+					//caca.wait();
+					//caca.stop();
+					//		}
+					/*		catch (ThreadDeath E){
+						//cuz we dont care
+						//System.out.println(E);
+					}
+					catch (Error E){
+
+					}
+					catch (Exception A){
+
+					}*/
+					isObject = true;
+				}
 			}
+			nav2.setNotDone();
+
+			/*If it was an object, turn the robot and the sensor toward the object and
+			 * set isFinished to start the BlockRecognition class from the main 
+			 */
+			if (isObject) {
+				//lancer une methode
+
+				/*leftMotor.stop();
+				rightMotor.stop();*/
+				usMotor.setSpeed(25);
+				turnSensor(90);
+				turn(90);
+				//This will start a new Thread in main
+				isFinished = true;
+			}
+			isFinished = false;
+			//Si les deux classes run en meme temps, use synchronized(lock)
+
+			if(isObject){
+				turn(-90); // turn CCW
+				turnSensor(-90);
+				nav2.goForward(5);
+			}
+			Sound.beepSequenceUp();
+
 		}
-		isFinished = true;
+
+
+		if (Math.abs(odo.getX() - 180) > CM_ERR
+				&& Math.abs(odo.getY() - 60) < CM_ERR) {
+			travelTo2(180, 60);
+
+			if (isNotThereYet(60, 180)) {
+				isFinished = true;
+				return;
+			}
+
+			turn(90); // turn CCW
+		}
+
+		else {
+			isFinished = true;
+		}
 	}
+
+	public void travelTo2(double x, double y) {
+		boolean isObject = false;
+
+		long timeStart, timeEnd;
+
+		Arrays.fill(distanceArray, 255); // initializes the distanceArray
+
+		while (isNotThereYet(x, y)) {
+			timeStart = System.currentTimeMillis();
+
+			leftMotor.setSpeed(FORWARD_SPEED);
+			rightMotor.setSpeed(FORWARD_SPEED);
+			leftMotor.forward();
+			rightMotor.forward();
+
+			// If distance is less 
+			// than 30, set isObject true
+			if (getFilteredData()< 30) {
+				isObject = true;
+				break;
+			}
+
+			timeEnd = System.currentTimeMillis();
+			if (timeEnd - timeStart < TIME_PERIOD) {
+				try {
+					Thread.sleep(TIME_PERIOD - (timeEnd - timeStart));
+				} catch (InterruptedException e) {
+					// there is nothing to be done here because it is not
+					// expected that the detector will be
+					// interrupted by another thread
+				}
+			}
+
+		}
+
+		//once an object is found
+		if (isObject) {
+			usMotor.setSpeed(25);
+			turnSensor(90);
+			turn(-90);
+		}
+
+	}
+
 
 
 	// determines if robot is near target
@@ -181,32 +308,32 @@ public class Scan extends Thread{
 	public boolean coordinateReached(){
 		return coordinateNotReached ;
 	}
-
+	
 	//First method to travel
 	public void travelTo(double x, double y) {
 		isDone  = false;
 		double minAng;
-		while (Math.abs(x - odo.getX()) > CM_ERR || Math.abs(y - odo.getY()) > CM_ERR) {
+		while (interruption && (Math.abs(x - odo.getX()) > CM_ERR || Math.abs(y - odo.getY()) > CM_ERR)) {
 			minAng = (Math.atan2(y - odo.getY(), x - odo.getX())) * (180.0 / Math.PI);
 			if (minAng < 0)
 				minAng += 360.0;
 			turnTo(minAng, false);
 			setSpeeds(FAST, FAST);
 			setSpeeds(FAST, FAST);
-
+			
 			//While we are travelling if we see an object, stop the method
 			if (getFilteredData()< 30) {
 				return;
-			}
+				}
 		}
 		rightMotor.setSpeed(0);
 		leftMotor.setSpeed(0);
 		isDone = true;
 	}
-
+	
 	//Call this second method multiple times to travel (it must be called inside a while loop)
 	//This method doesn't have to be completed to execute another action
-	public void travelTo2(double x, double y) {
+	public void travelTo3(double x, double y) {
 		isDone  = false;
 		double minAng;
 		if (Math.abs(x - odo.getX()) > CM_ERR || Math.abs(y - odo.getY()) > CM_ERR) {
@@ -217,12 +344,12 @@ public class Scan extends Thread{
 			setSpeeds(FAST, FAST);
 			setSpeeds(FAST, FAST);
 		} else{
-			rightMotor.setSpeed(0);
-			leftMotor.setSpeed(0);
-			isDone = true;
+		rightMotor.setSpeed(0);
+		leftMotor.setSpeed(0);
+		isDone = true;
 		}
 	}
-
+	
 	public void setSpeeds(int lSpd, int rSpd) {
 		this.leftMotor.setSpeed(lSpd);
 		this.rightMotor.setSpeed(rSpd);
@@ -235,7 +362,7 @@ public class Scan extends Thread{
 		else
 			this.rightMotor.forward();
 	}
-
+	
 	public void turnTo(double angle, boolean stop) {
 
 		double error = angle - this.odo.getAng();
