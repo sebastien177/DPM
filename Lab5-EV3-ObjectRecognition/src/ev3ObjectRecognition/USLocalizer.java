@@ -1,11 +1,8 @@
 package ev3ObjectRecognition;
 
 
-import lejos.*;
-import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
-import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
@@ -47,8 +44,8 @@ public class USLocalizer {
 	// This class makes the robot localize at the start of the lab
 	//It makes the robot orient itself to an angle of 45 degrees at the position (0,0)
 	public void doLocalization() {
-
 		Navigation nav = new Navigation(this.odo);
+
 		// These will be the angles of the robot from both walls
 		double angleA, angleB;
 
@@ -60,7 +57,7 @@ public class USLocalizer {
 
 			// Rotate the robot until it sees no wall
 			while (getFilteredData() <= threshold) {
-				setRotationSpeed(-25);
+				setRotationSpeed(-10);
 
 			}
 			// Determining the angle when it sees no wall
@@ -70,7 +67,7 @@ public class USLocalizer {
 			// Keep rotating until the robot sees a wall, then latch the angle
 			while (getFilteredData() + 10 >= threshold) {
 
-				setRotationSpeed(-35);
+				setRotationSpeed(-20);
 
 			}
 
@@ -103,135 +100,94 @@ public class USLocalizer {
 			odo.setPosition(new double[] { 0.0, 0.0, theta }, new boolean[] {
 					true, true, true });
 
-			for (int i = 0; i < 50; i++) {
-				setRotationSpeed(-10);
-			}
-
-			// This rotation is to face the wall directly to get its x position
-			while (odo.getAng() > 270) {
-				setRotationSpeed(-20);
-
-
-			}
-
-			setRotationSpeed(0);
-
-			// Calculating the x position taking into consideration the sensor distance
-			double xPosition = 2*(getFilteredData() + SENSOR_DISTANCE);
-
-			// Updating the x position of the robot after facing the wall
-			odo.setPosition(new double[] { -xPosition, 0.0, odo.getAng() },
-					new boolean[] { true, false, false });
-
-			// This keeps turning to face another wall to get its y position
-			while (odo.getAng() > 180) {
-
-				setRotationSpeed(-20);
-			}
-
-			setRotationSpeed(0);
-
-			// Calculating the y position taking into consideration the sensor distance
-			double yPosition = 2*((getFilteredData() + SENSOR_DISTANCE));
-
-
-			// Setting the final position of the robot after localizing
-			odo.setPosition(
-					new double[] { 0.0, -yPosition, odo.getAng() },
-					new boolean[] { false, true, false });
-
 			// Turning to the 0 degrees so it is facing the same orientation as the origin
-			while (180.0 - odo.getAng() + turnError < 180) {
-
-				setRotationSpeed(-30);
-
-			}
-			// Stop the robot after reaching the origin
-			setRotationSpeed(0);
-			//nav.travelTo(0, 0);
-			odo.setPosition(
-					new double[] { 0.0, 0.0, odo.getAng()},
-					new boolean[] { true, true, true });
 
 
-		}
+		nav.turnTo(45, false);
+		odo.setPosition(new double[] { 0.0, 0.0, theta+5 }, new boolean[] {
+				true, true, true });
+		// Stop the robot after reaching the origin
+		setRotationSpeed(0);
+
+
 	}
+}
 
-	// This is a getting to get the filtered ultrasonic sensor (used for display purposes)
-	public int getData() {
-		return getFilteredData();
+// This is a getting to get the filtered ultrasonic sensor (used for display purposes)
+public int getData() {
+	return getFilteredData();
+}
+
+// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
+private int getFilteredData() {
+
+	// wait for the ping to complete
+	try {
+		Thread.sleep(25);
+	} 
+	catch (InterruptedException e) {
+
 	}
+	usSensor.fetchSample(usData, 0);
+	int distance = (int) (usData[0]*100);
 
-	// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
-	private int getFilteredData() {
+	LCD.drawInt(distance, 3, 3);
+	LCD.drawInt((int) SENSOR_DISTANCE, 6, 6);
 
-		// wait for the ping to complete
-		try {
-			Thread.sleep(25);
-		} 
-		catch (InterruptedException e) {
+	// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
+	// to be 35
 
-		}
-		usSensor.fetchSample(usData, 0);
-		int distance = (int) (usData[0]*100);
+	if (distance > 42) {
 
-		LCD.drawInt((int) distance, 3, 3);
-		LCD.drawInt((int) SENSOR_DISTANCE, 6, 6);
-
-		// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
-		// to be 35
-
-		if (distance > 42) {
-
-			distance = 42;
-
-		}
-
-		return distance;
+		distance = 42;
 
 	}
 
-	public void setForwardSpeed(double speed) {
-		forwardSpeed = speed;
-		setSpeeds(forwardSpeed, rotationSpeed);
+	return distance;
+
+}
+
+public void setForwardSpeed(double speed) {
+	forwardSpeed = speed;
+	setSpeeds(forwardSpeed, rotationSpeed);
+}
+
+public void setRotationSpeed(double speed) {
+	rotationSpeed = speed;
+	setSpeeds(forwardSpeed, rotationSpeed);
+}
+
+public void setSpeeds(double forwardSpeed, double rotationalSpeed) {
+	double leftSpeed, rightSpeed;
+
+	this.forwardSpeed = forwardSpeed;
+	this.rotationSpeed = rotationalSpeed; 
+
+	leftSpeed = (forwardSpeed + rotationalSpeed * width * Math.PI / 360.0) *
+			180.0 / (leftRadius * Math.PI);
+	rightSpeed = (forwardSpeed - rotationalSpeed * width * Math.PI / 360.0) *
+			180.0 / (rightRadius * Math.PI);
+
+	// set motor directions
+	if (leftSpeed > 0.0)
+		this.leftMotor.forward();
+	else {
+		this.leftMotor.backward();
+		leftSpeed = -leftSpeed;
 	}
 
-	public void setRotationSpeed(double speed) {
-		rotationSpeed = speed;
-		setSpeeds(forwardSpeed, rotationSpeed);
+	if (rightSpeed > 0.0)
+		this.rightMotor.forward();
+	else {
+		this.rightMotor.backward();
+		rightSpeed = -rightSpeed;
 	}
 
-	public void setSpeeds(double forwardSpeed, double rotationalSpeed) {
-		double leftSpeed, rightSpeed;
+	// set motor speeds
+	this.leftMotor.setSpeed((int)leftSpeed);
 
-		this.forwardSpeed = forwardSpeed;
-		this.rotationSpeed = rotationalSpeed; 
-
-		leftSpeed = (forwardSpeed + rotationalSpeed * width * Math.PI / 360.0) *
-				180.0 / (leftRadius * Math.PI);
-		rightSpeed = (forwardSpeed - rotationalSpeed * width * Math.PI / 360.0) *
-				180.0 / (rightRadius * Math.PI);
-
-		// set motor directions
-		if (leftSpeed > 0.0)
-			this.leftMotor.forward();
-		else {
-			this.leftMotor.backward();
-			leftSpeed = -leftSpeed;
-		}
-
-		if (rightSpeed > 0.0)
-			this.rightMotor.forward();
-		else {
-			this.rightMotor.backward();
-			rightSpeed = -rightSpeed;
-		}
-
-		// set motor speeds
-		this.leftMotor.setSpeed((int)leftSpeed);
-
-		this.rightMotor.setSpeed((int)rightSpeed);
-	}
+	this.rightMotor.setSpeed((int)rightSpeed);
+}
 
 
 }

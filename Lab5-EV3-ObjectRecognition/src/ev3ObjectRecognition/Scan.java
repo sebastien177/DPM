@@ -27,6 +27,7 @@ public class Scan extends Thread{
 	private boolean isDone = false;
 	private boolean isObject = false;
 	private int FAST = 150, SLOW = 100;
+	private boolean interruption = false;
 	final static double DEG_ERR = 3.0;
 
 	public Scan (SampleProvider usSensor, float[] usData, SampleProvider colorSensor, float[] colorData, Odometer odo,  EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, EV3LargeRegulatedMotor usMotor){
@@ -48,11 +49,12 @@ public class Scan extends Thread{
 	public void startRun(){
 		isFinished = false;		
 
-
+/*
 		//might have to change
 		odo.setPosition(new double[]{0.0,0.0,45.0}, new boolean[]{true,true,true});
 		turn(-45);
-
+*/
+		turnTo(90, true);
 
 		//Turn the USsensor after localization to scan the objects on the field on the right of the robot
 		usMotor.setSpeed(70); 
@@ -66,7 +68,7 @@ public class Scan extends Thread{
 			 * 2 cases : An object was detected or we reached the coordinate we set
 			 */
 			while (!isDone){
-				travelTo(0, 60);
+				travelTo(0, 75);
 
 				//If we reached the wanted coordinate, then we didn't pick up any object... go to next coordinate
 				if (isDone){
@@ -77,9 +79,11 @@ public class Scan extends Thread{
 				if (getFilteredData()< 30 && coordinateNotReached) {
 					//While there is an object advance slowly
 					FAST=30;
-					while (getFilteredData()<40){
+					interruption = true;
+					while (getFilteredData()<45){
 						travelTo(0,60);
 					}
+					interruption = false;
 					//When there is no more object on the right stop the robot and put FAST to initial value for next iteration
 					setSpeeds(0, 0);
 					FAST=150;
@@ -117,15 +121,67 @@ public class Scan extends Thread{
 			isObject = false;
 		}
 
-		//Object was not found while going to first coordinate, go to next coordinate
+		//Object was not found while going to first coordinate, go to next coordinate (60,60)
 		coordinateNotReached = true;
 		isDone = false;
 		while (coordinateNotReached){
 
+			/*
+			 * The isDone boolean is know when hte robot has to stop travelling 
+			 * 2 cases : An object was detected or we reached the coordinate we set
+			 */
 			while (!isDone){
+				travelTo(75, 75);
 
-				travelTo(60, 60);		
+				//If we reached the wanted coordinate, then we didn't pick up any object... go to next coordinate
+				if (isDone){
+					coordinateNotReached = false;
+				}
+
+				//If there is an object inside 30cm on the right change the speed of the robot to go more slowly
+				if (getFilteredData()< 30 && coordinateNotReached) {
+					//While there is an object advance slowly
+					FAST=30;
+					interruption = true;
+					while (getFilteredData()<40){
+						travelTo(60,60);
+					}
+					interruption = false;
+					//When there is no more object on the right stop the robot and put FAST to initial value for next iteration
+					setSpeeds(0, 0);
+					FAST=150;
+
+					//set isObject and isDone to true, to go get the object
+					isDone=true;
+					isObject = true;
+				}
 			}
+			isDone=false;
+
+			/*If it was an object, turn the robot 90 degree and make it sensor look in front of the robot
+			 * launch the BLockRecognition class
+			 */
+			if (isObject) {
+				usMotor.setSpeed(50);
+				turnSensor(90);
+				turn(90);
+				Lab5.br.startRun();
+				//isFinished = true;
+			}
+			//isFinished = false;
+			//Si les deux classes run en meme temps, use synchronized(lock)
+			Sound.beepSequenceUp();
+
+			//If we are back after BlockRecognition that means it wasn't a styrofoam
+			//Make the robot continue it orginal travelling and scanning
+			if(isObject){
+				turn(-90); // turn CCW
+				turnSensor(-90);
+				leftMotor.forward();
+				rightMotor.forward();
+				Delay.msDelay(200);
+			}
+			isObject = false;
 		}
 		isFinished = true;
 	}
@@ -196,6 +252,9 @@ public class Scan extends Thread{
 
 			//While we are travelling if we see an object, stop the method
 			if (getFilteredData()< 30) {
+				return;
+			}
+			if(interruption){
 				return;
 			}
 		}

@@ -1,16 +1,10 @@
 package ev3ObjectRecognition;
 
 
-import lejos.ev3.*;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
-import lejos.hardware.port.Port;
-import lejos.hardware.sensor.*;
 import lejos.hardware.*;
 import lejos.robotics.SampleProvider;
-import lejos.hardware.port.Port;
-import lejos.hardware.port.SensorPort;
-import lejos.hardware.sensor.EV3ColorSensor;
 
 //This method is used for PartA of Lab5, it doesn't involve the motors, only the sensors and the screen
 //To display a description of objects displayed in front of the robot
@@ -34,6 +28,7 @@ public class ObjectDetection extends Thread{
 	}
 
 	// This method differentiate a Wooden block from a Styrofoam block, used in PartA of Lab5
+	@Override
 	public void run() {
 		long correctionStart, correctionEnd;	
 		int buttonChoice = 0;

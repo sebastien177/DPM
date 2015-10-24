@@ -1,0 +1,130 @@
+package ev3ObjectRecognition;
+
+//21h22
+import lejos.hardware.*;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.LCD;
+import lejos.hardware.lcd.TextLCD;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.*;
+import lejos.robotics.SampleProvider;
+
+
+public class Lab5 {
+	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+	private static final EV3LargeRegulatedMotor usMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("C"));
+	private static final Port usPort = LocalEV3.get().getPort("S1");		
+	private static final Port colorPort = LocalEV3.get().getPort("S2");
+	public static final double WHEEL_RADIUS = 2.145;
+	public static final double TRACK = 15.25;
+	static BlockRecognition br;
+
+	public static void main(String[] args) {
+		int buttonChoice;
+
+		// setup the odometer and display
+		Odometer odo = new Odometer(leftMotor, rightMotor, 30, true);
+		final TextLCD t = LocalEV3.get().getTextLCD();
+
+		do {
+			// clear the display
+			t.clear();
+
+			// ask the user whether he wants to detect blocks or search blocks
+			t.drawString("< Left  |Right >", 0, 0);
+			t.drawString("        |       ", 0, 1);
+			t.drawString("Detect|Search ", 0, 2);
+
+			buttonChoice = Button.waitForAnyPress();
+
+			while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT 
+					&& buttonChoice != Button.ID_ESCAPE){
+				/*
+				 * These two if statements is to make the motor attached to the USsensor rotate
+				 * 90 degrees before the main methods are launched
+				 */
+				if (buttonChoice == Button.ID_UP) {
+					Scan scan = new Scan(usMotor);
+					scan.usMotorSpeed(50);
+					scan.turnSensor(90);
+					buttonChoice = Button.waitForAnyPress();
+				}
+
+				if (buttonChoice == Button.ID_DOWN) {
+					Scan scan = new Scan(usMotor);
+					scan.usMotorSpeed(50);
+					scan.turnSensor(-90);
+					buttonChoice = Button.waitForAnyPress();
+				}
+			}
+		} while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT
+				&& buttonChoice != Button.ID_ESCAPE);
+
+		if (buttonChoice == Button.ID_ESCAPE){
+			System.exit(0);
+		}
+
+		SensorModes usSensor = new EV3UltrasonicSensor(usPort);
+		SampleProvider usValue = usSensor.getMode("Distance");			// colorValue provides samples from this instance
+		float[] usData = new float[usValue.sampleSize()];				// colorData is the buffer in which data are returned
+
+		SensorModes colorSensor = new EV3ColorSensor(colorPort);
+		SampleProvider colorValue = colorSensor.getMode("ColorID");			// colorValue provides samples from this instance
+		float[] colorData = new float[colorValue.sampleSize()];			// colorData is the buffer in which data are returned
+
+		// The following start the PartA of the Lab when the right button is pressed, afterwards press escape to exit program
+		while(buttonChoice != Button.ID_RIGHT
+				&& buttonChoice != Button.ID_ESCAPE){
+			if (buttonChoice == Button.ID_LEFT) {
+				ObjectDetection od = new ObjectDetection(colorValue, colorData, usValue, usData);
+				od.run();
+				LCD.drawString("< Left  |Right >", 0, 0);
+				LCD.drawString("        |       ", 0, 1);
+				LCD.drawString("Detect|Search ", 0, 2);	
+			}
+			buttonChoice = Button.waitForAnyPress();
+		}
+
+		if (buttonChoice == Button.ID_ESCAPE){
+			System.exit(0);
+		}
+		//If the left button is pressed, the robot will start partB of the lab and start scanning the field
+		
+		odo.start();
+		/*		USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
+		 */		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
+		 br  = new BlockRecognition(odo,  usSensor,  usData,  colorValue,colorData, rightMotor, leftMotor);
+
+		 new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
+		 /*
+		usl.doLocalization();
+		  */		
+		 
+		 // begin the threads (we launch a thread to be able to exit it whenever we want using escape)
+		 (new Thread() {
+			 public void run() { 
+				 
+				 br.start();
+				 scan.start();
+				 
+
+				// while (true) {
+					 scan.startRun();
+/*
+					 // if a scanning routine needs to perform block detection
+					 if (scan.getIsDone()) {
+						 br.startRun();
+					 }
+					 if(br.finishedMOFO()){
+						 break;
+					 }
+				 }
+
+*/			 }
+		 }).start();
+		 while (Button.waitForAnyPress() != Button.ID_ESCAPE);
+		 System.exit(0); 
+	}
+}

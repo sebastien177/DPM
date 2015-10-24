@@ -83,7 +83,7 @@ public class Navigation extends Thread {
 			minAng = (Math.atan2(y - odometer.getY(), x - odometer.getX())) * (180.0 / Math.PI);
 			if (minAng < 0)
 				minAng += 360.0;
-			this.turnTo(minAng, false);
+			this.turnToWithblock(minAng, false);
 			this.setSpeeds(FAST, FAST);
 		}
 		this.setSpeeds(0, 0);
@@ -122,6 +122,31 @@ public class Navigation extends Thread {
 				this.setSpeeds(-SLOW, SLOW);
 			} else if (error < 0.0) {
 				this.setSpeeds(SLOW, -SLOW);
+			} else if (error > 180.0) {
+				this.setSpeeds(SLOW, -SLOW);
+			} else {
+				this.setSpeeds(-SLOW, SLOW);
+			}
+		}
+
+		if (stop) {
+			this.setSpeeds(0, 0);
+		}
+	}
+	
+	//This method is the same as turnTo, however, it will always turn clockwise because we only have one arm on the left
+	public void turnToWithblock(double angle, boolean stop) {
+
+		double error = angle - this.odometer.getAng();
+
+		while (Math.abs(error) > DEG_ERR) {
+
+			error = angle - this.odometer.getAng();
+
+			if (error < -180.0) {
+				this.setSpeeds(SLOW, -SLOW);
+			} else if (error < 0.0) {
+				this.setSpeeds(-SLOW, SLOW);
 			} else if (error > 180.0) {
 				this.setSpeeds(SLOW, -SLOW);
 			} else {

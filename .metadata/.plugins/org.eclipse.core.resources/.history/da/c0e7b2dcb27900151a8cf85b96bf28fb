@@ -1,0 +1,193 @@
+package ev3ObjectRecognition;
+
+
+import lejos.hardware.lcd.LCD;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
+
+//This code is moslty taken from the USLocalizer done in Lab5
+//It makes the robot find it's initial position and orientation
+public class USLocalizer {
+	public enum LocalizationType { // The two localization type available
+		FALLING_EDGE, RISING_EDGE
+	};
+
+	//Variable declaration
+	public static double ROTATION_SPEED = 30;
+	public static double SENSOR_DISTANCE = 8.0; // Distance of the sensor from the robot's center
+	private static double turnError = 1.5; 
+	private double leftRadius, rightRadius, width;
+	private double forwardSpeed, rotationSpeed;
+	private double threshold = 41; // The threshold value when a robot sees the wall
+	private Odometer odo;
+	private LocalizationType locType;
+	private EV3LargeRegulatedMotor leftMotor;
+	private EV3LargeRegulatedMotor rightMotor;
+	private SampleProvider usSensor;
+	private float[] usData;
+
+
+	public USLocalizer(Odometer odo, SampleProvider usSensor, float[] usData,
+			LocalizationType locType, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double wheelRadius, double width) {
+		this.odo = odo;
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+		this.usSensor = usSensor;
+		this.usData = usData;
+		this.locType = locType;
+		this.leftRadius= wheelRadius;
+		this.rightRadius = wheelRadius;
+		this.width = width;
+	}
+
+	// This class makes the robot localize at the start of the lab
+	//It makes the robot orient itself to an angle of 45 degrees at the position (0,0)
+	public void doLocalization() {
+		// These will be the angles of the robot from both walls
+		double angleA, angleB;
+
+		//Initialize the robot position to 0
+		odo.setPosition(new double[] { 0.0, 0.0, 0.0 }, new boolean[] { true,
+				true, true });
+		// The localization type used for the lab will mostly by Falling Edge
+		if (locType == LocalizationType.FALLING_EDGE) {
+
+			// Rotate the robot until it sees no wall
+			while (getFilteredData() <= threshold) {
+				setRotationSpeed(-10);
+
+			}
+			// Determining the angle when it sees no wall
+			angleA = odo.getAng();
+			Delay.msDelay(500);
+
+			// Keep rotating until the robot sees a wall, then latch the angle
+			while (getFilteredData() + 10 >= threshold) {
+
+				setRotationSpeed(-20);
+
+			}
+
+			// Switch direction and wait until it sees no wall
+			while (getFilteredData() <= threshold) {
+
+				setRotationSpeed(10);
+
+			}
+			// Tracking the angle when it senses the second wall
+			angleB = odo.getAng();
+
+			// Stop the robot after it senses two walls
+			setRotationSpeed(0);
+
+			// angleA is clockwise from angleB, so assume the average of the
+			// angles to the right of angleB is 45 degrees past 'north'
+
+			double theta = 0;
+			if (angleA > angleB) {
+
+				theta = 45 - (angleA + angleB) / 2;
+				theta += odo.getAng();
+			} else {
+
+				theta = 230 - (angleA + angleB) / 2;
+			}
+			
+			setRotationSpeed(0);
+
+			// Turning to the 0 degrees so it is facing the same orientation as the origin
+			while (180.0 - odo.getAng() + turnError < 180) {
+
+				setRotationSpeed(-30);
+
+			}
+			// Stop the robot after reaching the origin
+			setRotationSpeed(0);
+			//nav.travelTo(0, 0);
+			odo.setPosition(
+					new double[] { 0.0, 0.0, 45},
+					new boolean[] { true, true, true });
+
+
+		}
+	}
+
+	// This is a getting to get the filtered ultrasonic sensor (used for display purposes)
+	public int getData() {
+		return getFilteredData();
+	}
+
+	// This is the filter for the ultrasonic sensor. It returns a filtered sensor reading
+	private int getFilteredData() {
+
+		// wait for the ping to complete
+		try {
+			Thread.sleep(25);
+		} 
+		catch (InterruptedException e) {
+
+		}
+		usSensor.fetchSample(usData, 0);
+		int distance = (int) (usData[0]*100);
+
+		LCD.drawInt(distance, 3, 3);
+		LCD.drawInt((int) SENSOR_DISTANCE, 6, 6);
+
+		// This is the filter. If the distance is more than 35, it is considered to be "infinite" so set the distance
+		// to be 35
+
+		if (distance > 42) {
+
+			distance = 42;
+
+		}
+
+		return distance;
+
+	}
+
+	public void setForwardSpeed(double speed) {
+		forwardSpeed = speed;
+		setSpeeds(forwardSpeed, rotationSpeed);
+	}
+
+	public void setRotationSpeed(double speed) {
+		rotationSpeed = speed;
+		setSpeeds(forwardSpeed, rotationSpeed);
+	}
+
+	public void setSpeeds(double forwardSpeed, double rotationalSpeed) {
+		double leftSpeed, rightSpeed;
+
+		this.forwardSpeed = forwardSpeed;
+		this.rotationSpeed = rotationalSpeed; 
+
+		leftSpeed = (forwardSpeed + rotationalSpeed * width * Math.PI / 360.0) *
+				180.0 / (leftRadius * Math.PI);
+		rightSpeed = (forwardSpeed - rotationalSpeed * width * Math.PI / 360.0) *
+				180.0 / (rightRadius * Math.PI);
+
+		// set motor directions
+		if (leftSpeed > 0.0)
+			this.leftMotor.forward();
+		else {
+			this.leftMotor.backward();
+			leftSpeed = -leftSpeed;
+		}
+
+		if (rightSpeed > 0.0)
+			this.rightMotor.forward();
+		else {
+			this.rightMotor.backward();
+			rightSpeed = -rightSpeed;
+		}
+
+		// set motor speeds
+		this.leftMotor.setSpeed((int)leftSpeed);
+
+		this.rightMotor.setSpeed((int)rightSpeed);
+	}
+
+
+}

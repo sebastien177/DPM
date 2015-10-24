@@ -1,6 +1,5 @@
 package ev3ObjectRecognition;
 
-//21h22
 import lejos.hardware.*;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
@@ -90,41 +89,26 @@ public class Lab5 {
 		if (buttonChoice == Button.ID_ESCAPE){
 			System.exit(0);
 		}
-		//If the left button is pressed, the robot will start partB of the lab and start scanning the field
-		
+		//If the left button is pressed, the robot will start partB of the lab which is localize, and start scanning the field
+
 		odo.start();
-		/*		USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
-		 */		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
-		 br  = new BlockRecognition(odo,  usSensor,  usData,  colorValue,colorData, rightMotor, leftMotor);
+		final USLocalizer usl = new USLocalizer(odo, usSensor, usData,USLocalizer.LocalizationType.FALLING_EDGE, leftMotor, rightMotor, WHEEL_RADIUS, TRACK );
+		final Scan scan = new Scan(usValue, usData, colorValue, colorData, odo, leftMotor, rightMotor, usMotor);
+		br  = new BlockRecognition(odo,  usSensor,  usData,  colorValue,colorData, rightMotor, leftMotor);
 
-		 new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
-		 /*
-		usl.doLocalization();
-		  */		
-		 
-		 // begin the threads (we launch a thread to be able to exit it whenever we want using escape)
-		 (new Thread() {
-			 public void run() { 
-				 
-				 br.start();
-				 scan.start();
-				 
+		new LCDInfo(odo, usSensor, usData, colorSensor, colorData);
 
-				// while (true) {
-					 scan.startRun();
-/*
-					 // if a scanning routine needs to perform block detection
-					 if (scan.getIsDone()) {
-						 br.startRun();
-					 }
-					 if(br.finishedMOFO()){
-						 break;
-					 }
-				 }
 
-*/			 }
-		 }).start();
-		 while (Button.waitForAnyPress() != Button.ID_ESCAPE);
-		 System.exit(0); 
+		// begin the threads (we launch a thread to be able to exit it whenever we want using escape)
+		(new Thread() {
+			public void run() { 
+				br.start();
+				scan.start();
+				usl.doLocalization();
+				scan.startRun();
+			}
+		}).start();
+		while (Button.waitForAnyPress() != Button.ID_ESCAPE);
+		System.exit(0); 
 	}
 }
